@@ -13,11 +13,10 @@ Modal prints the endpoint URL. The Android app POSTs raw audio bytes to it
 with the header:  Authorization: Bearer <API_TOKEN>
 """
 import os
-
 import modal
 
 # ---- CHANGE THIS to your fine-tuned model's Hugging Face repo id ----
-MODEL_ID = "YOUR_USERNAME/your-finetuned-whisper-large-v3-turbo"
+MODEL_ID = "eist-edinburgh/whisper-large-v3-turbo-gaelic-ct2-v2"
 
 app = modal.App("whisper-transcribe")
 
