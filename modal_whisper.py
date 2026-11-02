@@ -21,7 +21,7 @@ import modal
 MODEL_ID = "eist-edinburgh/whisper-large-v3-turbo-gaelic-ct2-v2"
 
 # Set to e.g. "en" to force a language, or None to auto-detect.
-LANGUAGE = None
+LANGUAGE = None # "gd"  # Scottish Gaelic"
 
 app = modal.App("whisper-transcribe")
 
