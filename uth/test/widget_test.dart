@@ -1,30 +1,90 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:uth/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  late Directory documentsDirectory;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUp(() async {
+    documentsDirectory = await Directory.systemTemp.createTemp('uth-test-');
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  test('comparison reports no differences before a transcript exists', () {
+    final comparison = compareText('Read this original text.', '');
+
+    expect(comparison.matches, isTrue);
+    expect(comparison.differences, isEmpty);
+  });
+
+  test('comparison ignores case, whitespace, and supported punctuation', () {
+    final comparison = compareText(
+      'Hello, world! Are you ready?',
+      'hello  world. Are you ready!',
+    );
+
+    expect(comparison.matches, isTrue);
+  });
+
+  test('comparison returns the recognized text for a discrepancy', () {
+    final comparison = compareText(
+      'Say hello, then go.',
+      'Say goodbye, then go.',
+    );
+
+    expect(comparison.differences, hasLength(1));
+    expect(comparison.differences.single.transcript, 'goodbye,');
+  });
+
+  test('a selected section can be replaced in the saved transcript', () {
+    final transcript = replaceTranscriptForSelection(
+      'I say hello there.',
+      'I say hello there.',
+      const TextSelection(baseOffset: 6, extentOffset: 11),
+      'goodbye',
+    );
+
+    expect(transcript, 'I say goodbye there.');
+  });
+
+  testWidgets('a named text can be created and opened', (tester) async {
+    await tester.pumpWidget(
+      MyApp(documentsDirectoryProvider: () async => documentsDirectory),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.text('Add text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'Practice text',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      'Read this sentence.',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Practice text'), findsOneWidget);
+    expect(find.text('Read this sentence.'), findsOneWidget);
+    expect(find.text('Record text'), findsOneWidget);
+
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 }
