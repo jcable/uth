@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pretty_diff_text/pretty_diff_text.dart';
 import 'package:uth/main.dart';
 
 void main() {
@@ -106,7 +107,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('combined view shows original then transcript differences', (
+  testWidgets('comparison views show original and transcript differences', (
     tester,
   ) async {
     await File('${documentsDirectory.path}/saved_texts.json').writeAsString(
@@ -153,6 +154,30 @@ void main() {
     await tester.pumpAndSettle();
     selectable = tester.widget<SelectableText>(find.byType(SelectableText));
     expect(selectable.textSpan!.toPlainText(), 'We like green apples.');
+
+    await tester.tap(find.text('Diff'));
+    await tester.pumpAndSettle();
+    final diff = tester.widget<PrettyDiffText>(find.byType(PrettyDiffText));
+    expect(
+      diff.textSpans.map((span) => span.toPlainText()).join(),
+      'We like love green apples.',
+    );
+    expect(
+      diff.textSpans.any(
+        (span) =>
+            span.text == 'like' &&
+            span.style?.backgroundColor == Colors.green.shade100,
+      ),
+      isTrue,
+    );
+    expect(
+      diff.textSpans.any(
+        (span) =>
+            span.text == 'love' &&
+            span.style?.backgroundColor == Colors.red.shade100,
+      ),
+      isTrue,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();

@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:pretty_diff_text/pretty_diff_text.dart';
 import 'package:record/record.dart';
 
 import 'auth/secrets.dart';
@@ -97,6 +98,8 @@ class _Word {
 }
 
 enum _Edit { equal, substitute, delete, insert }
+
+enum _TextViewMode { original, combined, prettyDiff }
 
 class _EditStep {
   const _EditStep(this.edit, this.originalIndex, this.transcriptIndex);
@@ -338,7 +341,7 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _recording = false;
   bool _playing = false;
   bool _transcribing = false;
-  bool _combinedView = false;
+  _TextViewMode _viewMode = _TextViewMode.original;
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
@@ -696,7 +699,7 @@ class _TranscribePageState extends State<TranscribePage> {
         difference.start,
         difference.end,
       );
-      if (_combinedView) {
+      if (_viewMode == _TextViewMode.combined) {
         spans.add(
           TextSpan(
             text: originalSegment,
@@ -712,7 +715,7 @@ class _TranscribePageState extends State<TranscribePage> {
             ),
           );
         }
-      } else {
+      } else if (_viewMode == _TextViewMode.original) {
         if (_recognizers.length == differenceIndex) {
           _recognizers.add(TapGestureRecognizer());
         }
@@ -770,14 +773,24 @@ class _TranscribePageState extends State<TranscribePage> {
           if (text.transcript.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: SegmentedButton<bool>(
+              child: SegmentedButton<_TextViewMode>(
                 segments: const [
-                  ButtonSegment(value: false, label: Text('Original')),
-                  ButtonSegment(value: true, label: Text('Combined')),
+                  ButtonSegment(
+                    value: _TextViewMode.original,
+                    label: Text('Original'),
+                  ),
+                  ButtonSegment(
+                    value: _TextViewMode.combined,
+                    label: Text('Combined'),
+                  ),
+                  ButtonSegment(
+                    value: _TextViewMode.prettyDiff,
+                    label: Text('Diff'),
+                  ),
                 ],
-                selected: {_combinedView},
+                selected: {_viewMode},
                 onSelectionChanged: (selection) {
-                  setState(() => _combinedView = selection.first);
+                  setState(() => _viewMode = selection.first);
                 },
               ),
             ),
@@ -798,34 +811,55 @@ class _TranscribePageState extends State<TranscribePage> {
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: SelectableText.rich(
-                    TextSpan(
-                      style: Theme.of(context).textTheme.bodyLarge
-                          ?.copyWith(height: 1.7),
-                      children: spans,
-                    ),
-                    onSelectionChanged: (selection, cause) {
-                      setState(() {
-                        _selection = selection.isCollapsed ? null : selection;
-                      });
-                    },
-                  ),
+                  child: _viewMode == _TextViewMode.prettyDiff
+                      ? PrettyDiffText(
+                          oldText: text.content,
+                          newText: text.transcript,
+                          defaultTextStyle:
+                              Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(height: 1.7) ??
+                              const TextStyle(height: 1.7),
+                          deletedTextStyle: TextStyle(
+                            backgroundColor: Colors.green.shade100,
+                          ),
+                          addedTextStyle: TextStyle(
+                            backgroundColor: Colors.red.shade100,
+                          ),
+                        )
+                      : SelectableText.rich(
+                          TextSpan(
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(height: 1.7),
+                            children: spans,
+                          ),
+                          onSelectionChanged: (selection, cause) {
+                            setState(() {
+                              _selection = selection.isCollapsed
+                                  ? null
+                                  : selection;
+                            });
+                          },
+                        ),
                 ),
               ),
             ),
           ),
-          if (_comparison.differences.isNotEmpty)
+          if (_comparison.differences.isNotEmpty ||
+              _viewMode == _TextViewMode.prettyDiff)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                _combinedView
-                    ? '${_comparison.differences.length} difference(s): '
-                        'original text followed by transcript text.'
-                    : '${_comparison.differences.length} difference(s) '
-                        'highlighted. Tap a highlighted section to see the '
-                        'transcript.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              child: Text(switch (_viewMode) {
+                _TextViewMode.original =>
+                  '${_comparison.differences.length} difference(s) '
+                      'highlighted. Tap a highlighted section to see the '
+                      'transcript.',
+                _TextViewMode.combined =>
+                  '${_comparison.differences.length} difference(s): '
+                      'original text followed by transcript text.',
+                _TextViewMode.prettyDiff =>
+                  'Original-only text and transcript-only text are '
+                      'highlighted.',
+              }, style: Theme.of(context).textTheme.bodySmall),
             ),
           if (_error != null)
             Padding(

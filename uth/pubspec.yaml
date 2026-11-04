@@ -38,6 +38,7 @@ dependencies:
   http: ^1.6.0
   path_provider: ^2.1.6
   audioplayers: ^6.8.1
+  pretty_diff_text: ^2.1.0
 
 dev_dependencies:
   flutter_test:
