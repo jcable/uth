@@ -338,6 +338,7 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _recording = false;
   bool _playing = false;
   bool _transcribing = false;
+  bool _combinedView = false;
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
@@ -691,22 +692,44 @@ class _TranscribePageState extends State<TranscribePage> {
           TextSpan(text: text.content.substring(cursor, difference.start)),
         );
       }
-      if (_recognizers.length == differenceIndex) {
-        _recognizers.add(TapGestureRecognizer());
-      }
-      final recognizer = _recognizers[differenceIndex++]
-        ..onTap = () => _showDifference(difference);
-      spans.add(
-        TextSpan(
-          text: text.content.substring(difference.start, difference.end),
-          style: TextStyle(
-            backgroundColor: Theme.of(context).colorScheme.errorContainer,
-            decoration: TextDecoration.underline,
-            decorationColor: Theme.of(context).colorScheme.error,
-          ),
-          recognizer: recognizer,
-        ),
+      final originalSegment = text.content.substring(
+        difference.start,
+        difference.end,
       );
+      if (_combinedView) {
+        spans.add(
+          TextSpan(
+            text: originalSegment,
+            style: TextStyle(backgroundColor: Colors.green.shade100),
+          ),
+        );
+        if (difference.transcript.isNotEmpty) {
+          spans.add(const TextSpan(text: ' '));
+          spans.add(
+            TextSpan(
+              text: difference.transcript,
+              style: TextStyle(backgroundColor: Colors.red.shade100),
+            ),
+          );
+        }
+      } else {
+        if (_recognizers.length == differenceIndex) {
+          _recognizers.add(TapGestureRecognizer());
+        }
+        final recognizer = _recognizers[differenceIndex++]
+          ..onTap = () => _showDifference(difference);
+        spans.add(
+          TextSpan(
+            text: originalSegment,
+            style: TextStyle(
+              backgroundColor: Theme.of(context).colorScheme.errorContainer,
+              decoration: TextDecoration.underline,
+              decorationColor: Theme.of(context).colorScheme.error,
+            ),
+            recognizer: recognizer,
+          ),
+        );
+      }
       cursor = difference.end;
     }
     while (_recognizers.length > differenceIndex) {
@@ -744,6 +767,20 @@ class _TranscribePageState extends State<TranscribePage> {
       ),
       body: Column(
         children: [
+          if (text.transcript.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Original')),
+                  ButtonSegment(value: true, label: Text('Combined')),
+                ],
+                selected: {_combinedView},
+                onSelectionChanged: (selection) {
+                  setState(() => _combinedView = selection.first);
+                },
+              ),
+            ),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) => SingleChildScrollView(
@@ -781,8 +818,12 @@ class _TranscribePageState extends State<TranscribePage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                '${_comparison.differences.length} difference(s) highlighted. '
-                'Tap a highlighted section to see the transcript.',
+                _combinedView
+                    ? '${_comparison.differences.length} difference(s): '
+                        'original text followed by transcript text.'
+                    : '${_comparison.differences.length} difference(s) '
+                        'highlighted. Tap a highlighted section to see the '
+                        'transcript.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),

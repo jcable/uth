@@ -17,7 +17,7 @@ Before there is a transcription, the text should not be compared with anything a
 
 The app compares the transcript with the original text, ignoring any differences of capitalisation, white space, full stops, commas, quotation marks, question marks and exclamation marks.
 
- The app modifies the text view to highlight sections where the transcript differs. The highlighted sections can be clicked on to reveal the transcript.
+ The app can highlight sections where the transcript differs, with highlighted sections clickable to reveal the transcript. When a transcript exists, the user can also switch to a combined view that leaves matching text unhighlighted and shows each differing original section in green followed by its transcript in red.
 
 The user can select a section of the text and record new audio for transcription for that section. The relevant section of the full transcript is replaced with the new transcript and the transcript is compared again with the original text and the highlighting updated.
 

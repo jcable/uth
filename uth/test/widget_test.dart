@@ -1,4 +1,5 @@
-import 'movedart:io';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,6 +102,58 @@ void main() {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 100)),
     );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('combined view shows original then transcript differences', (
+    tester,
+  ) async {
+    await File('${documentsDirectory.path}/saved_texts.json').writeAsString(
+      jsonEncode([
+        {
+          'id': 'comparison',
+          'name': 'Comparison',
+          'content': 'We like green apples.',
+          'transcript': 'We love green apples.',
+        },
+      ]),
+    );
+    await tester.pumpWidget(
+      MyApp(documentsDirectoryProvider: () async => documentsDirectory),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Comparison'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Combined'));
+    await tester.pumpAndSettle();
+
+    var selectable = tester.widget<SelectableText>(find.byType(SelectableText));
+    var spans = selectable.textSpan!.children!.whereType<TextSpan>().toList();
+    expect(
+      spans.map((span) => span.toPlainText()).join(),
+      'We like love green apples.',
+    );
+    expect(spans.first.style?.backgroundColor, isNull);
+    expect(
+      spans.singleWhere((span) => span.text == 'like').style?.backgroundColor,
+      Colors.green.shade100,
+    );
+    expect(
+      spans.singleWhere((span) => span.text == 'love').style?.backgroundColor,
+      Colors.red.shade100,
+    );
+    expect(spans.last.style?.backgroundColor, isNull);
+
+    await tester.tap(find.text('Original'));
+    await tester.pumpAndSettle();
+    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
+    expect(selectable.textSpan!.toPlainText(), 'We like green apples.');
+
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
   });
