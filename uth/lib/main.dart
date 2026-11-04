@@ -720,6 +720,7 @@ class _TranscribePageState extends State<TranscribePage> {
     }
 
     final isRecordingSelection = _selection != null && !_selection!.isCollapsed;
+    const verticalPadding = 12.0;
     final recordLabel = text.transcript.isEmpty
         ? 'Record'
         : isRecordingSelection
@@ -748,11 +749,11 @@ class _TranscribePageState extends State<TranscribePage> {
               builder: (context, constraints) => SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
-                  vertical: 12,
+                  vertical: verticalPadding,
                 ),
                 child: Container(
                   width: double.infinity,
-                  height: constraints.maxHeight - 24,
+                  height: constraints.maxHeight - verticalPadding * 2,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     border: Border.all(
