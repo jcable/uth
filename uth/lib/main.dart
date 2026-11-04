@@ -720,6 +720,11 @@ class _TranscribePageState extends State<TranscribePage> {
     }
 
     final isRecordingSelection = _selection != null && !_selection!.isCollapsed;
+    final recordLabel = text.transcript.isEmpty
+        ? 'Record'
+        : isRecordingSelection
+        ? 'Record selected'
+        : 'Re-record';
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -739,19 +744,35 @@ class _TranscribePageState extends State<TranscribePage> {
       body: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: SelectableText.rich(
-                TextSpan(
-                  style: Theme.of(context).textTheme.bodyLarge
-                      ?.copyWith(height: 1.7),
-                  children: spans,
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
                 ),
-                onSelectionChanged: (selection, cause) {
-                  setState(() {
-                    _selection = selection.isCollapsed ? null : selection;
-                  });
-                },
+                child: Container(
+                  width: double.infinity,
+                  height: constraints.maxHeight - 24,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SelectableText.rich(
+                    TextSpan(
+                      style: Theme.of(context).textTheme.bodyLarge
+                          ?.copyWith(height: 1.7),
+                      children: spans,
+                    ),
+                    onSelectionChanged: (selection, cause) {
+                      setState(() {
+                        _selection = selection.isCollapsed ? null : selection;
+                      });
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -792,7 +813,7 @@ class _TranscribePageState extends State<TranscribePage> {
                   OutlinedButton.icon(
                     onPressed: _togglePlayback,
                     icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
-                    label: Text(_playing ? 'Pause playback' : 'Play recording'),
+                    label: Text(_playing ? 'Pause playback' : 'Play'),
                   ),
                   OutlinedButton.icon(
                     onPressed: () async {
@@ -805,7 +826,7 @@ class _TranscribePageState extends State<TranscribePage> {
                   FilledButton.icon(
                     onPressed: _transcribeRecording,
                     icon: const Icon(Icons.send),
-                    label: const Text('Transcribe'),
+                    label: const Text('Go'),
                   ),
                 ],
               ),
@@ -817,22 +838,19 @@ class _TranscribePageState extends State<TranscribePage> {
                 alignment: WrapAlignment.center,
                 spacing: 8,
                 children: [
-                  if (isRecordingSelection)
-                    OutlinedButton.icon(
-                      onPressed: _transcribing
-                          ? null
-                          : () => _startRecording(selection: _selection),
-                      icon: const Icon(Icons.mic),
-                      label: const Text('Record selected section'),
-                    ),
                   FilledButton.icon(
-                    onPressed: _transcribing ? null : _startRecording,
+                    onPressed: _transcribing
+                        ? null
+                        : () => _startRecording(
+                            selection: isRecordingSelection ? _selection : null,
+                          ),
                     icon: const Icon(Icons.mic),
-                    label: const Text('Record text'),
+                    label: Text(recordLabel),
                   ),
                 ],
               ),
             ),
+          const SizedBox(height: 48),
           if (_transcribing)
             const Padding(
               padding: EdgeInsets.only(bottom: 16),

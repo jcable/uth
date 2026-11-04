@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'movedart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,7 +79,24 @@ void main() {
 
     expect(find.text('Practice text'), findsOneWidget);
     expect(find.text('Read this sentence.'), findsOneWidget);
-    expect(find.text('Record text'), findsOneWidget);
+    expect(find.text('Record'), findsOneWidget);
+    expect(find.text('Record selected section'), findsNothing);
+
+    await tester.tap(find.text('Practice text'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.ancestor(
+        of: find.byType(SelectableText),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Container &&
+              widget.decoration is BoxDecoration &&
+              (widget.decoration! as BoxDecoration).border != null,
+        ),
+      ),
+      findsOneWidget,
+    );
 
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 100)),
