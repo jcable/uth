@@ -13,6 +13,31 @@ void main() {
     documentsDirectory = await Directory.systemTemp.createTemp('uth-test-');
   });
 
+  test('saved texts round-trip and retain backward compatibility', () {
+    const savedText = SavedText(
+      id: 'one',
+      name: 'Practice',
+      content: 'Read this.',
+      transcript: 'Read that.',
+    );
+
+    expect(SavedText.fromJson(savedText.toJson()).toJson(), savedText.toJson());
+    expect(
+      SavedText.fromJson({
+        'id': 'legacy',
+        'name': 'Legacy',
+        'content': 'Old format',
+      }).transcript,
+      isEmpty,
+    );
+    expect(savedText.copyWith(name: 'Updated').toJson(), {
+      'id': 'one',
+      'name': 'Updated',
+      'content': 'Read this.',
+      'transcript': 'Read that.',
+    });
+  });
+
   test('comparison reports no differences before a transcript exists', () {
     final comparison = compareText('Read this original text.', '');
 
@@ -39,6 +64,16 @@ void main() {
     expect(comparison.differences.single.transcript, 'goodbye,');
   });
 
+  test('comparison reports deleted and inserted words', () {
+    final deleted = compareText('Say hello, then go.', 'Say then go.');
+    expect(deleted.differences, hasLength(1));
+    expect(deleted.differences.single.transcript, isEmpty);
+
+    final inserted = compareText('Say hello.', 'Say hello there.');
+    expect(inserted.differences, hasLength(1));
+    expect(inserted.differences.single.transcript, 'there.');
+  });
+
   test('a selected section can be replaced in the saved transcript', () {
     final transcript = replaceTranscriptForSelection(
       'I say hello there.',
@@ -50,14 +85,34 @@ void main() {
     expect(transcript, 'I say goodbye there.');
   });
 
+  test(
+    'a selected section is replaced in a transcript with different words',
+    () {
+      final transcript = replaceTranscriptForSelection(
+        'I say hello there.',
+        'I say hi there.',
+        const TextSelection(baseOffset: 6, extentOffset: 11),
+        'goodbye',
+      );
+
+      expect(transcript, 'I say goodbye there.');
+    },
+  );
+
+  test('re-recording rejects a selection that contains no words', () {
+    expect(
+      () => replaceTranscriptForSelection(
+        'Read this text.',
+        'Read this text.',
+        const TextSelection.collapsed(offset: 5),
+        'that',
+      ),
+      throwsFormatException,
+    );
+  });
+
   testWidgets('a named text can be created and opened', (tester) async {
-    await tester.pumpWidget(
-      MyApp(documentsDirectoryProvider: () async => documentsDirectory),
-    );
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 100)),
-    );
-    await tester.pump();
+    await _pumpApp(tester, documentsDirectory);
 
     await tester.tap(find.text('Add text'));
     await tester.pumpAndSettle();
@@ -110,7 +165,9 @@ void main() {
   testWidgets('comparison views show original and transcript differences', (
     tester,
   ) async {
-    await File('${documentsDirectory.path}/saved_texts.json').writeAsString(
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
       jsonEncode([
         {
           'id': 'comparison',
@@ -120,18 +177,12 @@ void main() {
         },
       ]),
     );
-    await tester.pumpWidget(
-      MyApp(documentsDirectoryProvider: () async => documentsDirectory),
-    );
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 100)),
-    );
-    await tester.pump();
+    await _pumpApp(tester, documentsDirectory);
     await tester.tap(find.text('Comparison'));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     await tester.tap(find.text('Combined'));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     var selectable = tester.widget<SelectableText>(find.byType(SelectableText));
     var spans = selectable.textSpan!.children!.whereType<TextSpan>().toList();
@@ -149,23 +200,22 @@ void main() {
       Colors.red.shade100,
     );
     expect(spans.last.style?.backgroundColor, isNull);
-
     await tester.tap(find.text('Original'));
-    await tester.pumpAndSettle();
+    await tester.pump();
     selectable = tester.widget<SelectableText>(find.byType(SelectableText));
     expect(selectable.textSpan!.toPlainText(), 'We like green apples.');
 
     await tester.tap(find.text('Diff'));
-    await tester.pumpAndSettle();
+    await tester.pump();
     final diff = tester.widget<PrettyDiffText>(find.byType(PrettyDiffText));
     expect(
       diff.textSpans.map((span) => span.toPlainText()).join(),
-      'We like love green apples.',
+      'We likove green apples.',
     );
     expect(
       diff.textSpans.any(
         (span) =>
-            span.text == 'like' &&
+            span.text == 'ik' &&
             span.style?.backgroundColor == Colors.green.shade100,
       ),
       isTrue,
@@ -173,13 +223,136 @@ void main() {
     expect(
       diff.textSpans.any(
         (span) =>
-            span.text == 'love' &&
+            span.text == 'ov' &&
             span.style?.backgroundColor == Colors.red.shade100,
       ),
       isTrue,
     );
 
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('load errors can be dismissed', (tester) async {
+    await _writeSavedTexts(tester, documentsDirectory, 'not valid json');
+    await _pumpApp(tester, documentsDirectory);
+
+    expect(find.textContaining('Could not load saved texts:'), findsOneWidget);
+    await tester.tap(find.text('Dismiss'));
+    await tester.pump();
+    expect(find.textContaining('Could not load saved texts:'), findsNothing);
+  });
+
+  testWidgets('editing and deleting saved text updates persistent storage', (
+    tester,
+  ) async {
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'saved',
+          'name': 'Before',
+          'content': 'Read the old text.',
+          'transcript': 'Read the old text.',
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+
+    await tester.tap(find.text('Before'));
     await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Edit name or text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'After',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      'Read the new text.',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+
+    await tester.tap(find.byTooltip('Back to texts'));
+    await tester.pumpAndSettle();
+    expect(find.text('After'), findsOneWidget);
+    expect(find.text('Transcript saved'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Delete After'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('After'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Delete After'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('After'), findsNothing);
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    final savedContents = await tester.runAsync(
+      () => File('${documentsDirectory.path}/saved_texts.json').readAsString(),
+    );
+    expect(savedContents, isNotNull);
+    expect(jsonDecode(savedContents!), isEmpty);
+  });
+
+  testWidgets('empty saved text shows an editing hint', (tester) async {
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {'id': 'empty', 'name': 'Empty', 'content': '', 'transcript': ''},
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+    await tester.tap(find.text('Empty'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No text yet. Use Edit to paste text.'), findsOneWidget);
+    expect(find.text('Record'), findsOneWidget);
+  });
+}
+
+Future<void> _pumpApp(WidgetTester tester, Directory documentsDirectory) async {
+  await tester.pumpWidget(
+    MyApp(documentsDirectoryProvider: () async => documentsDirectory),
+  );
+  for (
+    var attempt = 0;
+    attempt < 10 &&
+        find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+    attempt++
+  ) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pump();
+  }
+  expect(find.byType(CircularProgressIndicator), findsNothing);
+}
+
+Future<void> _writeSavedTexts(
+  WidgetTester tester,
+  Directory documentsDirectory,
+  String contents,
+) async {
+  await tester.runAsync(() async {
+    await File('${documentsDirectory.path}/saved_texts.json')
+        .writeAsString(contents);
   });
 }
