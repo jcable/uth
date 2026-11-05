@@ -22,6 +22,8 @@ Cha robh feum aca a bhith dragh orra.
 Bha an clann Sasannach a thaobh athar agus bha an teaghlach air a bhith a’ fuireach ann an Sasainn airson còrr is deich bliadhna. Bha Beurla math aca. Bha beurla math aig mòran Gàidheil cuideachd.
 """;
 
+const transcript = "nam biodh to ann a bhiodh iad sàbhailte s dè s dòcha rachad air thall an ungair b' àbhaist dhaibh toilichte ann bha bàta ga dhìon air deiseil dhaibh dh'fhalbh iad notumbria agus cha robh ràinig am bàta ann an roinn europa thèid stoirm am bàta gu tìr an alba b e fògarraich a bha aga cha robh gàidhlig aca jane and biggie air an glagadh agus an reic mu chroillidhean cha robh feum agaibh a bhith a dragh oirre bha an clann sasannach a thaobh atha agus bha an t-eagalach air a bhith a fuireach ann an sasainn airson còrr is deich";
+
 void main() {
   late Directory documentsDirectory;
 
