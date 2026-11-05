@@ -23,8 +23,6 @@ jobs:
           mkdir auth
           echo 'const apiToken="";' > auth/secrets.dart
         working-directory: uth/lib
-      - run: find .
-        working-directory: uth
       - run: flutter test --coverage
         working-directory: uth
       - uses: actions/upload-artifact@v4
