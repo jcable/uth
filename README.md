@@ -1,5 +1,9 @@
 # uth
 
+## Technologies 
+
+https://www.clarin.ac.uk/eist-gaelic-speech-recognition-tool
+
 The user pastes text into a scrollable text view.
 
 The text can be named and saved into a list of texts. Texts can be deleted from the list.
