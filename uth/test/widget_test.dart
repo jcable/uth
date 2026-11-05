@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uth/main.dart';
@@ -161,6 +162,50 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('the app menu opens the About page', (tester) async {
+    await _pumpApp(tester, documentsDirectory);
+
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Utterance helps you practice reading aloud and compare your spoken words with the original text.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('settings switches theme and links to About', (tester) async {
+    await _pumpApp(tester, documentsDirectory);
+
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    expect(
+      Theme.of(tester.element(find.text('Dark mode'))).brightness,
+      Brightness.light,
+    );
+    expect(find.byType(SwitchListTile), findsOneWidget);
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+
+    expect(
+      Theme.of(tester.element(find.text('Dark mode'))).brightness,
+      Brightness.dark,
+    );
+
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+    expect(find.text('About'), findsOneWidget);
+    expect(find.byType(SwitchListTile), findsNothing);
+  });
+
   testWidgets('comparison views show original and transcript differences', (
     tester,
   ) async {
@@ -313,51 +358,42 @@ void main() {
     expect(find.textContaining('Could not load saved texts:'), findsNothing);
   });
 
-  testWidgets('text list save action exports original and transcript files', (
-    tester,
-  ) async {
-    await _writeSavedTexts(
-      tester,
-      documentsDirectory,
-      jsonEncode([
-        {
-          'id': 'export',
-          'name': 'Practice',
-          'content': 'Original text.',
-          'transcript': 'Recognized text.',
-        },
-      ]),
-    );
-    await _pumpApp(tester, documentsDirectory);
-
-    expect(find.byTooltip('Save Practice'), findsOneWidget);
-    expect(find.byTooltip('Delete Practice'), findsOneWidget);
-    const savedText = SavedText(
-      id: 'export',
-      name: 'Practice',
-      content: 'Original text.',
-      transcript: 'Recognized text.',
-    );
-    final folderName = await tester.runAsync(
-      () => exportSavedTextFiles(savedText, documentsDirectory),
-    );
-
-    final exportedFiles = await tester.runAsync(() async {
-      final directory = Directory(
-        '${documentsDirectory.path}${Platform.pathSeparator}$folderName',
+  testWidgets(
+    'text list save action creates a ZIP of original and transcript',
+    (tester) async {
+      await _writeSavedTexts(
+        tester,
+        documentsDirectory,
+        jsonEncode([
+          {
+            'id': 'export',
+            'name': 'Practice',
+            'content': 'Original text.',
+            'transcript': 'Recognized text.',
+          },
+        ]),
       );
-      return (
-        original: await File(
-          '${directory.path}${Platform.pathSeparator}original.txt',
-        ).readAsString(),
-        transcript: await File(
-          '${directory.path}${Platform.pathSeparator}transcript.txt',
-        ).readAsString(),
+      await _pumpApp(tester, documentsDirectory);
+
+      expect(find.byTooltip('Save Practice'), findsOneWidget);
+      expect(find.byTooltip('Delete Practice'), findsOneWidget);
+      const savedText = SavedText(
+        id: 'export',
+        name: 'Practice',
+        content: 'Original text.',
+        transcript: 'Recognized text.',
       );
-    });
-    expect(exportedFiles?.original, 'Original text.');
-    expect(exportedFiles?.transcript, 'Recognized text.');
-  });
+      final archive = ZipDecoder().decodeBytes(
+        createSavedTextArchive(savedText),
+      );
+      expect(archive.files.map((file) => file.name), [
+        'Practice/original.txt',
+        'Practice/transcript.txt',
+      ]);
+      expect(utf8.decode(archive.files[0].content), 'Original text.');
+      expect(utf8.decode(archive.files[1].content), 'Recognized text.');
+    },
+  );
 
   testWidgets('editing and deleting saved text updates persistent storage', (
     tester,

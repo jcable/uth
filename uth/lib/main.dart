@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -17,17 +20,99 @@ const endpointUrl =
 
 void main() => runApp(const MyApp());
 
-class MyApp extends StatelessWidget {
+enum _AppMenuAction { settings, about }
+
+class MyApp extends StatefulWidget {
   const MyApp({super.key, this.documentsDirectoryProvider});
 
   final Future<Directory> Function()? documentsDirectoryProvider;
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _darkMode = false;
+
+  @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Utterance',
-    theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+    theme: ThemeData(
+      colorSchemeSeed: Colors.indigo,
+      brightness: Brightness.light,
+      useMaterial3: true,
+    ),
+    darkTheme: ThemeData(
+      colorSchemeSeed: Colors.indigo,
+      brightness: Brightness.dark,
+      useMaterial3: true,
+    ),
+    themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
     home: TranscribePage(
-      documentsDirectoryProvider: documentsDirectoryProvider,
+      documentsDirectoryProvider: widget.documentsDirectoryProvider,
+      darkMode: _darkMode,
+      onDarkModeChanged: (value) => setState(() => _darkMode = value),
+    ),
+  );
+}
+
+class _AboutPage extends StatelessWidget {
+  const _AboutPage();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('About')),
+    body: const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'Utterance helps you practice reading aloud and compare your spoken words with the original text.',
+          textAlign: TextAlign.center,
+        ),
+      ),
+    ),
+  );
+}
+
+class _SettingsPage extends StatefulWidget {
+  const _SettingsPage({
+    required this.darkMode,
+    required this.onDarkModeChanged,
+  });
+
+  final bool darkMode;
+  final ValueChanged<bool> onDarkModeChanged;
+
+  @override
+  State<_SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<_SettingsPage> {
+  late bool _darkMode = widget.darkMode;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Settings')),
+    body: ListView(
+      children: [
+        SwitchListTile(
+          title: const Text('Dark mode'),
+          value: _darkMode,
+          onChanged: (value) {
+            setState(() => _darkMode = value);
+            widget.onDarkModeChanged(value);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: const Text('About'),
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => const _AboutPage()));
+          },
+        ),
+      ],
     ),
   );
 }
@@ -68,11 +153,8 @@ class SavedText {
   );
 }
 
-Future<String> exportSavedTextFiles(
-  SavedText text,
-  Directory documentsDirectory,
-) async {
-  var folderName = text.name
+String _safeExportName(String name) {
+  var folderName = name
       .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
       .replaceAll(RegExp(r'[. ]+$'), '');
   if (folderName.isEmpty) folderName = 'text';
@@ -82,17 +164,17 @@ Future<String> exportSavedTextFiles(
   ).hasMatch(folderName)) {
     folderName = '_$folderName';
   }
-  final exportDirectory = Directory(
-    '${documentsDirectory.path}${Platform.pathSeparator}$folderName',
-  );
-  await exportDirectory.create(recursive: true);
-  await File(
-    '${exportDirectory.path}${Platform.pathSeparator}original.txt',
-  ).writeAsString(text.content);
-  await File(
-    '${exportDirectory.path}${Platform.pathSeparator}transcript.txt',
-  ).writeAsString(text.transcript);
   return folderName;
+}
+
+Uint8List createSavedTextArchive(SavedText text) {
+  final folderName = _safeExportName(text.name);
+  final archive = Archive()
+    ..addFile(ArchiveFile.string('$folderName/original.txt', text.content))
+    ..addFile(
+      ArchiveFile.string('$folderName/transcript.txt', text.transcript),
+    );
+  return ZipEncoder().encodeBytes(archive);
 }
 
 class TextDifference {
@@ -344,9 +426,16 @@ TextComparison compareText(String original, String transcript) {
 }
 
 class TranscribePage extends StatefulWidget {
-  const TranscribePage({super.key, this.documentsDirectoryProvider});
+  const TranscribePage({
+    super.key,
+    this.documentsDirectoryProvider,
+    required this.darkMode,
+    required this.onDarkModeChanged,
+  });
 
   final Future<Directory> Function()? documentsDirectoryProvider;
+  final bool darkMode;
+  final ValueChanged<bool> onDarkModeChanged;
 
   @override
   State<TranscribePage> createState() => _TranscribePageState();
@@ -437,14 +526,17 @@ class _TranscribePageState extends State<TranscribePage> {
 
   Future<void> _exportText(SavedText text) async {
     try {
-      final documentsDirectory =
-          await (widget.documentsDirectoryProvider?.call() ??
-              getApplicationDocumentsDirectory());
-      final folderName = await exportSavedTextFiles(text, documentsDirectory);
-      if (!mounted) return;
+      final fileName = '${_safeExportName(text.name)}.zip';
+      final savedFile = await FilePicker.saveFile(
+        fileName: fileName,
+        bytes: createSavedTextArchive(text),
+        mimeType: 'application/zip',
+        dialogTitle: 'Save ${text.name}',
+      );
+      if (savedFile == null || !mounted) return;
       setState(() => _error = null);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Saved original and transcript to $folderName')),
+        SnackBar(content: Text('Saved $fileName')),
       );
     } catch (error) {
       if (mounted) {
@@ -691,7 +783,43 @@ class _TranscribePageState extends State<TranscribePage> {
 
   Widget _buildTextList() {
     return Scaffold(
-      appBar: AppBar(title: const Text('My texts')),
+      appBar: AppBar(
+        title: const Text('My texts'),
+        actions: [
+          PopupMenuButton<_AppMenuAction>(
+            tooltip: 'More options',
+            onSelected: (action) {
+              switch (action) {
+                case _AppMenuAction.settings:
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => _SettingsPage(
+                        darkMode: widget.darkMode,
+                        onDarkModeChanged: widget.onDarkModeChanged,
+                      ),
+                    ),
+                  );
+                case _AppMenuAction.about:
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const _AboutPage(),
+                    ),
+                  );
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _AppMenuAction.settings,
+                child: Text('Settings'),
+              ),
+              PopupMenuItem(
+                value: _AppMenuAction.about,
+                child: Text('About'),
+              ),
+            ],
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _editText,
         icon: const Icon(Icons.add),
