@@ -755,9 +755,7 @@ class _TranscribePageState extends State<TranscribePage> {
     final defaultTextStyle =
         Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.7) ??
         const TextStyle(height: 1.7);
-    final deletedTextStyle = TextStyle(
-      backgroundColor: Colors.green.shade100,
-    );
+    final deletedTextStyle = TextStyle(backgroundColor: Colors.green.shade100);
     final addedTextStyle = TextStyle(backgroundColor: Colors.red.shade100);
     final prettyDiff = _viewMode == _TextViewMode.prettyDiff
         ? PrettyDiffText(
@@ -784,170 +782,177 @@ class _TranscribePageState extends State<TranscribePage> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          if (text.transcript.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: SegmentedButton<_TextViewMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: _TextViewMode.reveal,
-                    label: Text('Reveal'),
-                  ),
-                  ButtonSegment(
-                    value: _TextViewMode.both,
-                    label: Text('Both'),
-                  ),
-                  ButtonSegment(
-                    value: _TextViewMode.prettyDiff,
-                    label: Text('Diff'),
-                  ),
-                ],
-                selected: {_viewMode},
-                onSelectionChanged: (selection) {
-                  setState(() => _viewMode = selection.first);
-                },
-              ),
-            ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) => SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: verticalPadding,
-                ),
-                child: Container(
-                  width: double.infinity,
-                  height: constraints.maxHeight - verticalPadding * 2,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: prettyDiff != null
-                      ? SelectableText.rich(
-                          TextSpan(
-                            style: defaultTextStyle,
-                            children: prettyDiff.textSpans,
-                          ),
-                          onSelectionChanged: (selection, cause) {
-                            setState(() {
-                              _selection = _originalSelectionFromDiff(
-                                selection,
-                                prettyDiff.textSpans,
-                                addedTextStyle: addedTextStyle,
-                              );
-                            });
-                          },
-                        )
-                      : SelectableText.rich(
-                          TextSpan(
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(height: 1.7),
-                            children: spans,
-                          ),
-                          onSelectionChanged: (selection, cause) {
-                            setState(() {
-                              _selection = selection.isCollapsed
-                                  ? null
-                                  : selection;
-                            });
-                          },
-                        ),
-                ),
-              ),
-            ),
-          ),
-          if (_comparison.differences.isNotEmpty ||
-              _viewMode == _TextViewMode.prettyDiff)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(switch (_viewMode) {
-                _TextViewMode.reveal =>
-                  '${_comparison.differences.length} difference(s) '
-                      'highlighted. Tap a highlighted section to see the '
-                      'transcript.',
-                _TextViewMode.both =>
-                  '${_comparison.differences.length} difference(s): '
-                      'original text followed by transcript text.',
-                _TextViewMode.prettyDiff =>
-                  'Original-only text and transcript-only text are '
-                      'highlighted.',
-              }, style: Theme.of(context).textTheme.bodySmall),
-            ),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          if (_recording)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: FilledButton.icon(
-                onPressed: _stopRecording,
-                icon: const Icon(Icons.stop),
-                label: const Text('Stop recording'),
-              ),
-            )
-          else if (_pendingAudioPath != null && !_transcribing)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _togglePlayback,
-                    icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
-                    label: Text(_playing ? 'Pause playback' : 'Play'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final selection = _recordingSelection;
-                      await _startRecording(selection: selection);
+          Column(
+            children: [
+              if (text.transcript.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: SegmentedButton<_TextViewMode>(
+                    segments: const [
+                      ButtonSegment(
+                        value: _TextViewMode.reveal,
+                        label: Text('Reveal'),
+                      ),
+                      ButtonSegment(
+                        value: _TextViewMode.both,
+                        label: Text('Both'),
+                      ),
+                      ButtonSegment(
+                        value: _TextViewMode.prettyDiff,
+                        label: Text('Diff'),
+                      ),
+                    ],
+                    selected: {_viewMode},
+                    onSelectionChanged: (selection) {
+                      setState(() => _viewMode = selection.first);
                     },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Re-record'),
                   ),
-                  FilledButton.icon(
-                    onPressed: _transcribeRecording,
-                    icon: const Icon(Icons.send),
-                    label: const Text('Go'),
+                ),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: verticalPadding,
+                    ),
+                    child: Container(
+                      width: double.infinity,
+                      height: constraints.maxHeight - verticalPadding * 2,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: prettyDiff != null
+                          ? SelectableText.rich(
+                              TextSpan(
+                                style: defaultTextStyle,
+                                children: prettyDiff.textSpans,
+                              ),
+                              onSelectionChanged: (selection, cause) {
+                                setState(() {
+                                  _selection = _originalSelectionFromDiff(
+                                    selection,
+                                    prettyDiff.textSpans,
+                                    addedTextStyle: addedTextStyle,
+                                  );
+                                });
+                              },
+                            )
+                          : SelectableText.rich(
+                              TextSpan(
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(height: 1.7),
+                                children: spans,
+                              ),
+                              onSelectionChanged: (selection, cause) {
+                                setState(() {
+                                  _selection = selection.isCollapsed
+                                      ? null
+                                      : selection;
+                                });
+                              },
+                            ),
+                    ),
                   ),
-                ],
+                ),
               ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                children: [
-                  FilledButton.icon(
-                    onPressed: _transcribing
-                        ? null
-                        : () => _startRecording(
-                            selection: isRecordingSelection ? _selection : null,
-                          ),
-                    icon: const Icon(Icons.mic),
-                    label: Text(recordLabel),
+              if (_comparison.differences.isNotEmpty ||
+                  _viewMode == _TextViewMode.prettyDiff)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(switch (_viewMode) {
+                    _TextViewMode.reveal =>
+                      '${_comparison.differences.length} difference(s) '
+                          'highlighted. Tap a highlighted section to see the '
+                          'transcript.',
+                    _TextViewMode.both =>
+                      '${_comparison.differences.length} difference(s): '
+                          'original text followed by transcript text.',
+                    _TextViewMode.prettyDiff =>
+                      'Original-only text and transcript-only text are '
+                          'highlighted.',
+                  }, style: Theme.of(context).textTheme.bodySmall),
+                ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 48),
+                ),
+              if (_recording)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: FilledButton.icon(
+                    onPressed: _stopRecording,
+                    icon: const Icon(Icons.stop),
+                    label: const Text('Stop recording'),
+                  ),
+                )
+              else if (_pendingAudioPath != null && !_transcribing)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _togglePlayback,
+                        icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
+                        label: Text(_playing ? 'Pause playback' : 'Play'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final selection = _recordingSelection;
+                          await _startRecording(selection: selection);
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Re-record'),
+                      ),
+                      FilledButton.icon(
+                        onPressed: _transcribeRecording,
+                        icon: const Icon(Icons.send),
+                        label: const Text('Go'),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: _transcribing
+                            ? null
+                            : () => _startRecording(
+                                selection: isRecordingSelection
+                                    ? _selection
+                                    : null,
+                              ),
+                        icon: const Icon(Icons.mic),
+                        label: Text(recordLabel),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
           if (_transcribing)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 16),
+            const Center(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 8),
