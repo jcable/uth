@@ -1,0 +1,27 @@
+name: Flutter tests
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: uth
+      - run: flutter test --coverage
+        working-directory: uth
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: uth/coverage/lcov.info
