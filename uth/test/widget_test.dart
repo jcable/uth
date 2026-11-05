@@ -22,7 +22,8 @@ Cha robh feum aca a bhith dragh orra.
 Bha an clann Sasannach a thaobh athar agus bha an teaghlach air a bhith a’ fuireach ann an Sasainn airson còrr is deich bliadhna. Bha Beurla math aca. Bha beurla math aig mòran Gàidheil cuideachd.
 """;
 
-const transcript = "nam biodh to ann a bhiodh iad sàbhailte s dè s dòcha rachad air thall an ungair b' àbhaist dhaibh toilichte ann bha bàta ga dhìon air deiseil dhaibh dh'fhalbh iad notumbria agus cha robh ràinig am bàta ann an roinn europa thèid stoirm am bàta gu tìr an alba b e fògarraich a bha aga cha robh gàidhlig aca jane and biggie air an glagadh agus an reic mu chroillidhean cha robh feum agaibh a bhith a dragh oirre bha an clann sasannach a thaobh atha agus bha an t-eagalach air a bhith a fuireach ann an sasainn airson còrr is deich";
+const transcript =
+    "nam biodh to ann a bhiodh iad sàbhailte s dè s dòcha rachad air thall an ungair b' àbhaist dhaibh toilichte ann bha bàta ga dhìon air deiseil dhaibh dh'fhalbh iad notumbria agus cha robh ràinig am bàta ann an roinn europa thèid stoirm am bàta gu tìr an alba b e fògarraich a bha aga cha robh gàidhlig aca jane and biggie air an glagadh agus an reic mu chroillidhean cha robh feum agaibh a bhith a dragh oirre bha an clann sasannach a thaobh atha agus bha an t-eagalach air a bhith a fuireach ann an sasainn airson còrr is deich";
 
 void main() {
   late Directory documentsDirectory;
@@ -90,6 +91,34 @@ void main() {
     final inserted = compareText('Say hello.', 'Say hello there.');
     expect(inserted.differences, hasLength(1));
     expect(inserted.differences.single.transcript, 'there.');
+  });
+
+  test('comparison anchors inserted words at their position in the text', () {
+    const text = 'one two three four';
+    final comparison = compareText(text, 'one extra two three another four');
+
+    expect(
+      comparison.differences
+          .map((difference) => text.substring(difference.start, difference.end))
+          .toList(),
+      ['two', 'four'],
+    );
+  });
+
+  test('reveal spans preserve the original text for multiple insertions', () {
+    final spanBuilder = ComparisonTextSpanBuilder();
+    addTearDown(spanBuilder.dispose);
+    final spans = spanBuilder.build(
+      original: original,
+      comparison: compareText(original, transcript),
+      showTranscript: false,
+      revealColor: Colors.transparent,
+      revealUnderlineColor: Colors.black,
+      originalHighlightColor: Colors.green,
+      transcriptHighlightColor: Colors.red,
+    );
+
+    expect(spans.map((span) => span.toPlainText()).join(), original);
   });
 
   test('a selected section can be replaced in the saved transcript', () {
@@ -238,7 +267,7 @@ void main() {
       ]),
     );
     await _pumpApp(tester, documentsDirectory);
-    await tester.tap(find.text('Reveal'));
+    await tester.tap(find.text('Mairead\'s story'));
     await tester.pump();
 
     await tester.tap(find.text('Both'));

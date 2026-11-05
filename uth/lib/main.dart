@@ -210,6 +210,94 @@ enum _Edit { equal, substitute, delete, insert }
 
 enum _TextViewMode { reveal, both, prettyDiff }
 
+class ComparisonTextSpanBuilder {
+  final _recognizers = <TapGestureRecognizer>[];
+
+  List<TextSpan> build({
+    required String original,
+    required TextComparison comparison,
+    required bool showTranscript,
+    required Color revealColor,
+    required Color revealUnderlineColor,
+    required Color originalHighlightColor,
+    required Color transcriptHighlightColor,
+    void Function(TextDifference)? onDifferenceTap,
+  }) {
+    final spans = <TextSpan>[];
+    var cursor = 0;
+    var recognizerIndex = 0;
+    for (final difference in comparison.differences) {
+      if (difference.start < cursor || difference.end < difference.start) {
+        throw StateError(
+          'Text differences must be ordered and non-overlapping',
+        );
+      }
+      if (difference.start > cursor) {
+        spans.add(TextSpan(text: original.substring(cursor, difference.start)));
+      }
+      final originalSegment = original.substring(
+        difference.start,
+        difference.end,
+      );
+      if (showTranscript) {
+        spans.add(
+          TextSpan(
+            text: originalSegment,
+            style: TextStyle(backgroundColor: originalHighlightColor),
+          ),
+        );
+        if (difference.transcript.isNotEmpty) {
+          spans.add(const TextSpan(text: ' '));
+          spans.add(
+            TextSpan(
+              text: difference.transcript,
+              style: TextStyle(backgroundColor: transcriptHighlightColor),
+            ),
+          );
+        }
+      } else {
+        TapGestureRecognizer? recognizer;
+        if (onDifferenceTap != null) {
+          if (_recognizers.length == recognizerIndex) {
+            _recognizers.add(TapGestureRecognizer());
+          }
+          recognizer = _recognizers[recognizerIndex++]
+            ..onTap = () => onDifferenceTap(difference);
+        }
+        spans.add(
+          TextSpan(
+            text: originalSegment,
+            style: TextStyle(
+              backgroundColor: revealColor,
+              decoration: TextDecoration.underline,
+              decorationColor: revealUnderlineColor,
+            ),
+            recognizer: recognizer,
+          ),
+        );
+      }
+      cursor = difference.end;
+    }
+    while (_recognizers.length > recognizerIndex) {
+      _recognizers.removeLast().dispose();
+    }
+    if (cursor < original.length) {
+      spans.add(TextSpan(text: original.substring(cursor)));
+    }
+    if (original.isEmpty) {
+      spans.add(const TextSpan(text: 'No text yet. Use Edit to paste text.'));
+    }
+    return spans;
+  }
+
+  void dispose() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+  }
+}
+
 class _EditStep {
   const _EditStep(this.edit, this.originalIndex, this.transcriptIndex);
 
@@ -377,9 +465,11 @@ TextComparison compareText(String original, String transcript) {
   final steps = _alignWords(originalWords, transcriptWords);
   final differences = <TextDifference>[];
   var index = 0;
+  var originalPosition = 0;
 
   while (index < steps.length) {
     if (steps[index].edit == _Edit.equal) {
+      originalPosition = steps[index].originalIndex! + 1;
       index++;
       continue;
     }
@@ -400,7 +490,7 @@ TextComparison compareText(String original, String transcript) {
     if (originalWords.isEmpty) continue;
 
     final firstOriginal = changedOriginal.isEmpty
-        ? changedSteps.first.originalIndex ?? originalWords.length - 1
+        ? originalPosition.clamp(0, originalWords.length - 1).toInt()
         : changedOriginal.first;
     final lastOriginal = changedOriginal.isEmpty
         ? firstOriginal
@@ -421,6 +511,9 @@ TextComparison compareText(String original, String transcript) {
     differences.add(
       TextDifference(start: start, end: end, transcript: transcriptExcerpt),
     );
+    if (changedOriginal.isNotEmpty) {
+      originalPosition = changedOriginal.last + 1;
+    }
   }
   return TextComparison(differences);
 }
@@ -445,7 +538,7 @@ class _TranscribePageState extends State<TranscribePage> {
   AudioRecorder? _recorder;
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _playerStateSubscription;
-  final _recognizers = <TapGestureRecognizer>[];
+  final _spanBuilder = ComparisonTextSpanBuilder();
   List<SavedText> _texts = [];
   String? _selectedId;
   String? _pendingAudioPath;
@@ -476,9 +569,7 @@ class _TranscribePageState extends State<TranscribePage> {
 
   @override
   void dispose() {
-    for (final recognizer in _recognizers) {
-      recognizer.dispose();
-    }
+    _spanBuilder.dispose();
     final pendingPath = _pendingAudioPath;
     if (pendingPath != null) {
       final file = File(pendingPath);
@@ -535,9 +626,8 @@ class _TranscribePageState extends State<TranscribePage> {
       );
       if (savedFile == null || !mounted) return;
       setState(() => _error = null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Saved $fileName')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Saved $fileName')));
     } catch (error) {
       if (mounted) {
         setState(() => _error = 'Could not save "${text.name}": $error');
@@ -801,9 +891,7 @@ class _TranscribePageState extends State<TranscribePage> {
                   );
                 case _AppMenuAction.about:
                   Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const _AboutPage(),
-                    ),
+                    MaterialPageRoute<void>(builder: (_) => const _AboutPage()),
                   );
               }
             },
@@ -812,10 +900,7 @@ class _TranscribePageState extends State<TranscribePage> {
                 value: _AppMenuAction.settings,
                 child: Text('Settings'),
               ),
-              PopupMenuItem(
-                value: _AppMenuAction.about,
-                child: Text('About'),
-              ),
+              PopupMenuItem(value: _AppMenuAction.about, child: Text('About')),
             ],
           ),
         ],
@@ -869,64 +954,16 @@ class _TranscribePageState extends State<TranscribePage> {
   }
 
   Widget _buildTextView(SavedText text) {
-    final spans = <TextSpan>[];
-    var cursor = 0;
-    var differenceIndex = 0;
-    for (final difference in _comparison.differences) {
-      if (difference.start > cursor) {
-        spans.add(
-          TextSpan(text: text.content.substring(cursor, difference.start)),
-        );
-      }
-      final originalSegment = text.content.substring(
-        difference.start,
-        difference.end,
-      );
-      if (_viewMode == _TextViewMode.both) {
-        spans.add(
-          TextSpan(
-            text: originalSegment,
-            style: TextStyle(backgroundColor: Colors.green.shade100),
-          ),
-        );
-        if (difference.transcript.isNotEmpty) {
-          spans.add(const TextSpan(text: ' '));
-          spans.add(
-            TextSpan(
-              text: difference.transcript,
-              style: TextStyle(backgroundColor: Colors.red.shade100),
-            ),
-          );
-        }
-      } else if (_viewMode == _TextViewMode.reveal) {
-        if (_recognizers.length == differenceIndex) {
-          _recognizers.add(TapGestureRecognizer());
-        }
-        final recognizer = _recognizers[differenceIndex++]
-          ..onTap = () => _showDifference(difference);
-        spans.add(
-          TextSpan(
-            text: originalSegment,
-            style: TextStyle(
-              backgroundColor: Theme.of(context).colorScheme.errorContainer,
-              decoration: TextDecoration.underline,
-              decorationColor: Theme.of(context).colorScheme.error,
-            ),
-            recognizer: recognizer,
-          ),
-        );
-      }
-      cursor = difference.end;
-    }
-    while (_recognizers.length > differenceIndex) {
-      _recognizers.removeLast().dispose();
-    }
-    if (cursor < text.content.length) {
-      spans.add(TextSpan(text: text.content.substring(cursor)));
-    }
-    if (text.content.isEmpty) {
-      spans.add(const TextSpan(text: 'No text yet. Use Edit to paste text.'));
-    }
+    final spans = _spanBuilder.build(
+      original: text.content,
+      comparison: _comparison,
+      showTranscript: _viewMode == _TextViewMode.both,
+      revealColor: Theme.of(context).colorScheme.errorContainer,
+      revealUnderlineColor: Theme.of(context).colorScheme.error,
+      originalHighlightColor: Colors.green.shade100,
+      transcriptHighlightColor: Colors.red.shade100,
+      onDifferenceTap: _showDifference,
+    );
 
     final isRecordingSelection = _selection != null && !_selection!.isCollapsed;
     const verticalPadding = 12.0;
