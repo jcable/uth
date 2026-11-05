@@ -230,8 +230,8 @@ void main() {
       documentsDirectory,
       jsonEncode([
         {
-          'id': 'reveal',
-          'name': 'Reveal',
+          'id': 'mairead',
+          'name': 'Mairead\'s story',
           'content': original,
           'transcript': transcript,
         },
