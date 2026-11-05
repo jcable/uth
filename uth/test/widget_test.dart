@@ -181,7 +181,7 @@ void main() {
     await tester.tap(find.text('Comparison'));
     await tester.pump();
 
-    await tester.tap(find.text('Combined'));
+    await tester.tap(find.text('Both'));
     await tester.pump();
 
     var selectable = tester.widget<SelectableText>(find.byType(SelectableText));
@@ -200,7 +200,7 @@ void main() {
       Colors.red.shade100,
     );
     expect(spans.last.style?.backgroundColor, isNull);
-    await tester.tap(find.text('Original'));
+    await tester.tap(find.text('Reveal'));
     await tester.pump();
     selectable = tester.widget<SelectableText>(find.byType(SelectableText));
     expect(selectable.textSpan!.toPlainText(), 'We like green apples.');

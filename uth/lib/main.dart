@@ -99,7 +99,7 @@ class _Word {
 
 enum _Edit { equal, substitute, delete, insert }
 
-enum _TextViewMode { original, combined, prettyDiff }
+enum _TextViewMode { reveal, both, prettyDiff }
 
 class _EditStep {
   const _EditStep(this.edit, this.originalIndex, this.transcriptIndex);
@@ -341,7 +341,7 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _recording = false;
   bool _playing = false;
   bool _transcribing = false;
-  _TextViewMode _viewMode = _TextViewMode.original;
+  _TextViewMode _viewMode = _TextViewMode.reveal;
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
@@ -699,7 +699,7 @@ class _TranscribePageState extends State<TranscribePage> {
         difference.start,
         difference.end,
       );
-      if (_viewMode == _TextViewMode.combined) {
+      if (_viewMode == _TextViewMode.both) {
         spans.add(
           TextSpan(
             text: originalSegment,
@@ -715,7 +715,7 @@ class _TranscribePageState extends State<TranscribePage> {
             ),
           );
         }
-      } else if (_viewMode == _TextViewMode.original) {
+      } else if (_viewMode == _TextViewMode.reveal) {
         if (_recognizers.length == differenceIndex) {
           _recognizers.add(TapGestureRecognizer());
         }
@@ -776,12 +776,12 @@ class _TranscribePageState extends State<TranscribePage> {
               child: SegmentedButton<_TextViewMode>(
                 segments: const [
                   ButtonSegment(
-                    value: _TextViewMode.original,
-                    label: Text('Original'),
+                    value: _TextViewMode.reveal,
+                    label: Text('Reveal'),
                   ),
                   ButtonSegment(
-                    value: _TextViewMode.combined,
-                    label: Text('Combined'),
+                    value: _TextViewMode.both,
+                    label: Text('Both'),
                   ),
                   ButtonSegment(
                     value: _TextViewMode.prettyDiff,
@@ -849,11 +849,11 @@ class _TranscribePageState extends State<TranscribePage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(switch (_viewMode) {
-                _TextViewMode.original =>
+                _TextViewMode.reveal =>
                   '${_comparison.differences.length} difference(s) '
                       'highlighted. Tap a highlighted section to see the '
                       'transcript.',
-                _TextViewMode.combined =>
+                _TextViewMode.both =>
                   '${_comparison.differences.length} difference(s): '
                       'original text followed by transcript text.',
                 _TextViewMode.prettyDiff =>
