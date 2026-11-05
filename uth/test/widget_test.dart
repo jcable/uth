@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pretty_diff_text/pretty_diff_text.dart';
 import 'package:uth/main.dart';
 
 void main() {
@@ -207,13 +206,14 @@ void main() {
 
     await tester.tap(find.text('Diff'));
     await tester.pump();
-    final diff = tester.widget<PrettyDiffText>(find.byType(PrettyDiffText));
+    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
+    final diffSpans = selectable.textSpan!.children!.whereType<TextSpan>();
     expect(
-      diff.textSpans.map((span) => span.toPlainText()).join(),
+      diffSpans.map((span) => span.toPlainText()).join(),
       'We likove green apples.',
     );
     expect(
-      diff.textSpans.any(
+      diffSpans.any(
         (span) =>
             span.text == 'ik' &&
             span.style?.backgroundColor == Colors.green.shade100,
@@ -221,12 +221,82 @@ void main() {
       isTrue,
     );
     expect(
-      diff.textSpans.any(
+      diffSpans.any(
         (span) =>
             span.text == 'ov' &&
             span.style?.backgroundColor == Colors.red.shade100,
       ),
       isTrue,
+    );
+
+    var displayOffset = 0;
+    int? addedStart;
+    int? addedEnd;
+    int? deletedStart;
+    int? deletedEnd;
+    for (final span in diffSpans) {
+      final end = displayOffset + span.toPlainText().length;
+      if (span.style?.backgroundColor == Colors.red.shade100) {
+        addedStart = displayOffset;
+        addedEnd = end;
+      } else if (span.style?.backgroundColor == Colors.green.shade100) {
+        deletedStart = displayOffset;
+        deletedEnd = end;
+      }
+      displayOffset = end;
+    }
+    selectable.onSelectionChanged!(
+      TextSelection(baseOffset: addedStart!, extentOffset: addedEnd!),
+      SelectionChangedCause.longPress,
+    );
+    await tester.pump();
+    expect(find.text('Re-record'), findsOneWidget);
+
+    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
+    selectable.onSelectionChanged!(
+      TextSelection(baseOffset: deletedStart!, extentOffset: deletedEnd!),
+      SelectionChangedCause.longPress,
+    );
+    await tester.pump();
+    expect(find.text('Record selected'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('diff view scrolls when the text exceeds its viewport', (
+    tester,
+  ) async {
+    final original = List.filled(240, 'original').join(' ');
+    final transcript = original.replaceFirst('original', 'updated');
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'long-comparison',
+          'name': 'Long comparison',
+          'content': original,
+          'transcript': transcript,
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+    await tester.tap(find.text('Long comparison'));
+    await tester.pump();
+    await tester.tap(find.text('Diff'));
+    await tester.pump();
+
+    final selectableFinder = find.byType(SelectableText);
+    expect(selectableFinder, findsOneWidget);
+    final scrollableFinder = find.descendant(
+      of: selectableFinder,
+      matching: find.byType(Scrollable),
+    );
+    expect(scrollableFinder, findsOneWidget);
+    expect(
+      tester.state<ScrollableState>(scrollableFinder).position.maxScrollExtent,
+      greaterThan(0),
     );
 
     await tester.pumpWidget(const SizedBox.shrink());

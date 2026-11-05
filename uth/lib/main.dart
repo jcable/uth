@@ -752,6 +752,22 @@ class _TranscribePageState extends State<TranscribePage> {
         : isRecordingSelection
         ? 'Record selected'
         : 'Re-record';
+    final defaultTextStyle =
+        Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.7) ??
+        const TextStyle(height: 1.7);
+    final deletedTextStyle = TextStyle(
+      backgroundColor: Colors.green.shade100,
+    );
+    final addedTextStyle = TextStyle(backgroundColor: Colors.red.shade100);
+    final prettyDiff = _viewMode == _TextViewMode.prettyDiff
+        ? PrettyDiffText(
+            oldText: text.content,
+            newText: text.transcript,
+            defaultTextStyle: defaultTextStyle,
+            deletedTextStyle: deletedTextStyle,
+            addedTextStyle: addedTextStyle,
+          )
+        : null;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -811,20 +827,21 @@ class _TranscribePageState extends State<TranscribePage> {
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: _viewMode == _TextViewMode.prettyDiff
-                      ? PrettyDiffText(
-                          oldText: text.content,
-                          newText: text.transcript,
-                          defaultTextStyle:
-                              Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(height: 1.7) ??
-                              const TextStyle(height: 1.7),
-                          deletedTextStyle: TextStyle(
-                            backgroundColor: Colors.green.shade100,
+                  child: prettyDiff != null
+                      ? SelectableText.rich(
+                          TextSpan(
+                            style: defaultTextStyle,
+                            children: prettyDiff.textSpans,
                           ),
-                          addedTextStyle: TextStyle(
-                            backgroundColor: Colors.red.shade100,
-                          ),
+                          onSelectionChanged: (selection, cause) {
+                            setState(() {
+                              _selection = _originalSelectionFromDiff(
+                                selection,
+                                prettyDiff.textSpans,
+                                addedTextStyle: addedTextStyle,
+                              );
+                            });
+                          },
                         )
                       : SelectableText.rich(
                           TextSpan(
@@ -1007,4 +1024,39 @@ String replaceTranscriptForSelection(
       : transcript.length;
   final end = endToken > 0 ? transcriptWords[endToken - 1].end : start;
   return transcript.replaceRange(start, end, replacement);
+}
+
+TextSelection? _originalSelectionFromDiff(
+  TextSelection selection,
+  List<TextSpan> spans, {
+  required TextStyle addedTextStyle,
+}) {
+  if (selection.isCollapsed) return null;
+
+  final selectionStart = selection.start;
+  final selectionEnd = selection.end;
+  var displayOffset = 0;
+  var originalOffset = 0;
+  int? originalStart;
+  int? originalEnd;
+
+  for (final span in spans) {
+    final segment = span.toPlainText();
+    final displayEnd = displayOffset + segment.length;
+    if (span.style != addedTextStyle) {
+      final overlapStart = selectionStart > displayOffset
+          ? selectionStart
+          : displayOffset;
+      final overlapEnd = selectionEnd < displayEnd ? selectionEnd : displayEnd;
+      if (overlapStart < overlapEnd) {
+        originalStart ??= originalOffset + overlapStart - displayOffset;
+        originalEnd = originalOffset + overlapEnd - displayOffset;
+      }
+      originalOffset += segment.length;
+    }
+    displayOffset = displayEnd;
+  }
+
+  if (originalStart == null || originalEnd == null) return null;
+  return TextSelection(baseOffset: originalStart, extentOffset: originalEnd);
 }
