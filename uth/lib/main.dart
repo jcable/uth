@@ -68,6 +68,33 @@ class SavedText {
   );
 }
 
+Future<String> exportSavedTextFiles(
+  SavedText text,
+  Directory documentsDirectory,
+) async {
+  var folderName = text.name
+      .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
+      .replaceAll(RegExp(r'[. ]+$'), '');
+  if (folderName.isEmpty) folderName = 'text';
+  if (RegExp(
+    r'^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)',
+    caseSensitive: false,
+  ).hasMatch(folderName)) {
+    folderName = '_$folderName';
+  }
+  final exportDirectory = Directory(
+    '${documentsDirectory.path}${Platform.pathSeparator}$folderName',
+  );
+  await exportDirectory.create(recursive: true);
+  await File(
+    '${exportDirectory.path}${Platform.pathSeparator}original.txt',
+  ).writeAsString(text.content);
+  await File(
+    '${exportDirectory.path}${Platform.pathSeparator}transcript.txt',
+  ).writeAsString(text.transcript);
+  return folderName;
+}
+
 class TextDifference {
   const TextDifference({
     required this.start,
@@ -408,6 +435,24 @@ class _TranscribePageState extends State<TranscribePage> {
     }
   }
 
+  Future<void> _exportText(SavedText text) async {
+    try {
+      final documentsDirectory =
+          await (widget.documentsDirectoryProvider?.call() ??
+              getApplicationDocumentsDirectory());
+      final folderName = await exportSavedTextFiles(text, documentsDirectory);
+      if (!mounted) return;
+      setState(() => _error = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved original and transcript to $folderName')),
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = 'Could not save "${text.name}": $error');
+      }
+    }
+  }
+
   Future<void> _editText({SavedText? existing}) async {
     final draft = await showDialog<_TextDraft>(
       context: context,
@@ -674,10 +719,20 @@ class _TranscribePageState extends State<TranscribePage> {
                       _comparison = compareText(text.content, text.transcript);
                     });
                   },
-                  trailing: IconButton(
-                    tooltip: 'Delete ${text.name}',
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () => _deleteText(text),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Save ${text.name}',
+                        icon: const Icon(Icons.save_outlined),
+                        onPressed: () => _exportText(text),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete ${text.name}',
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _deleteText(text),
+                      ),
+                    ],
                   ),
                 );
               },

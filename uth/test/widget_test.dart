@@ -313,6 +313,52 @@ void main() {
     expect(find.textContaining('Could not load saved texts:'), findsNothing);
   });
 
+  testWidgets('text list save action exports original and transcript files', (
+    tester,
+  ) async {
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'export',
+          'name': 'Practice',
+          'content': 'Original text.',
+          'transcript': 'Recognized text.',
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+
+    expect(find.byTooltip('Save Practice'), findsOneWidget);
+    expect(find.byTooltip('Delete Practice'), findsOneWidget);
+    const savedText = SavedText(
+      id: 'export',
+      name: 'Practice',
+      content: 'Original text.',
+      transcript: 'Recognized text.',
+    );
+    final folderName = await tester.runAsync(
+      () => exportSavedTextFiles(savedText, documentsDirectory),
+    );
+
+    final exportedFiles = await tester.runAsync(() async {
+      final directory = Directory(
+        '${documentsDirectory.path}${Platform.pathSeparator}$folderName',
+      );
+      return (
+        original: await File(
+          '${directory.path}${Platform.pathSeparator}original.txt',
+        ).readAsString(),
+        transcript: await File(
+          '${directory.path}${Platform.pathSeparator}transcript.txt',
+        ).readAsString(),
+      );
+    });
+    expect(exportedFiles?.original, 'Original text.');
+    expect(exportedFiles?.transcript, 'Recognized text.');
+  });
+
   testWidgets('editing and deleting saved text updates persistent storage', (
     tester,
   ) async {
