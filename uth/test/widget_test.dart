@@ -224,6 +224,34 @@ void main() {
     expect(find.byType(SwitchListTile), findsNothing);
   });
 
+  testWidgets('reveal view displays the original text', (tester) async {
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'reveal',
+          'name': 'Reveal',
+          'content': original,
+          'transcript': transcript,
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+    await tester.tap(find.text('Reveal'));
+    await tester.pump();
+
+    await tester.tap(find.text('Both'));
+    await tester.pump();
+    await tester.tap(find.text('Reveal'));
+    await tester.pump();
+
+    final selectable = tester.widget<SelectableText>(
+      find.byType(SelectableText),
+    );
+    expect(selectable.textSpan!.toPlainText(), original);
+  });
+
   testWidgets('comparison views show original and transcript differences', (
     tester,
   ) async {
