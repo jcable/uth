@@ -19,7 +19,9 @@ jobs:
           cache: true
       - run: flutter pub get
         working-directory: uth
-      - run: echo 'const apiToken="";' > secrets.dart
+      - run: |
+          mkdir auth
+          echo 'const apiToken="";' > auth/secrets.dart
         working-directory: uth/lib
       - run: find .
         working-directory: uth
