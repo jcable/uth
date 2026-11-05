@@ -6,6 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uth/main.dart';
 
+const original = """
+Am biodhte ann a bhiodh iad sàbhailte?
+
+’S dòcha rachadh iad thall an Ungair. B’ àbhaist dhaibh toilichte ann.
+
+Bha bàta ga dhèanamh deiseil dhaibh.
+
+Dh’fhalbh iad Northumbria ach cha do ràinig am bàta an Roinn Eòrpa. Shèid stoirm am bàta gu tìr ann an Alba.
+
+B’ e fògarraich a bh’ aca. Cha robh Gàidhlig aca. Dè nam biodh iad an glacadh agus an reic mar thràillean?
+
+Cha robh feum aca a bhith dragh orra.
+
+Bha an clann Sasannach a thaobh athar agus bha an teaghlach air a bhith a’ fuireach ann an Sasainn airson còrr is deich bliadhna. Bha Beurla math aca. Bha beurla math aig mòran Gàidheil cuideachd.
+""";
+
 void main() {
   late Directory documentsDirectory;
 
