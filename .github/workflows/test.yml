@@ -21,6 +21,8 @@ jobs:
         working-directory: uth
       - run: echo 'const apiToken="";' > secrets.dart
         working-directory: uth/lib
+      - run: find .
+        working-directory: uth
       - run: flutter test --coverage
         working-directory: uth
       - uses: actions/upload-artifact@v4
