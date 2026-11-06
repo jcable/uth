@@ -217,12 +217,7 @@ void main() {
     await tester.tap(find.text('About'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text(
-        'Utterance helps you practice reading aloud and compare your spoken words with the original text.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.byType(RichText), findsAtLeastNWidgets(2));
   });
 
   testWidgets('settings switches theme and links to About', (tester) async {
@@ -382,6 +377,36 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+  });
+
+  testWidgets('tree view nests words under each text span', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'tree',
+          'name': 'Comparison',
+          'content': 'We like green apples.',
+          'transcript': 'We love green apples.',
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+    await tester.tap(find.text('Comparison'));
+    await tester.pump();
+
+    await tester.tap(find.text('Tree'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ExpansionTile), findsNWidgets(4));
+    expect(find.byType(ListTile), findsNWidgets(9));
+    expect(find.text('love'), findsNWidgets(2));
   });
 
   testWidgets('diff view scrolls when the text exceeds its viewport', (

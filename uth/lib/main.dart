@@ -232,7 +232,7 @@ class _Word {
 
 enum _Edit { equal, substitute, delete, insert }
 
-enum _TextViewMode { reveal, both, prettyDiff }
+enum _TextViewMode { reveal, both, tree, prettyDiff }
 
 class ComparisonTextSpanBuilder {
   final _recognizers = <TapGestureRecognizer>[];
@@ -981,7 +981,8 @@ class _TranscribePageState extends State<TranscribePage> {
     final spans = _spanBuilder.build(
       original: text.content,
       comparison: _comparison,
-      showTranscript: _viewMode == _TextViewMode.both,
+      showTranscript:
+          _viewMode == _TextViewMode.both || _viewMode == _TextViewMode.tree,
       revealColor: Theme.of(context).colorScheme.errorContainer,
       revealUnderlineColor: Theme.of(context).colorScheme.error,
       originalHighlightColor: Colors.green.shade100,
@@ -991,6 +992,7 @@ class _TranscribePageState extends State<TranscribePage> {
 
     final isRecordingSelection = _selection != null && !_selection!.isCollapsed;
     const verticalPadding = 12.0;
+    const buttonPadding = EdgeInsets.fromLTRB(12, 12, 12, 48);
     final recordLabel = text.transcript.isEmpty
         ? 'Record'
         : isRecordingSelection
@@ -1044,6 +1046,10 @@ class _TranscribePageState extends State<TranscribePage> {
                         label: Text('Both'),
                       ),
                       ButtonSegment(
+                        value: _TextViewMode.tree,
+                        label: Text('Tree'),
+                      ),
+                      ButtonSegment(
                         value: _TextViewMode.prettyDiff,
                         label: Text('Diff'),
                       ),
@@ -1087,6 +1093,45 @@ class _TranscribePageState extends State<TranscribePage> {
                                 });
                               },
                             )
+                          : _viewMode == _TextViewMode.tree
+                          ? DefaultTextStyle(
+                              style: defaultTextStyle,
+                              child: ListView.builder(
+                                itemCount: spans.length,
+                                itemBuilder: (context, index) {
+                                  final span = spans[index];
+                                  final words = RegExp(r'\S+')
+                                      .allMatches(span.text ?? '');
+                                  return ExpansionTile(
+                                    initiallyExpanded: true,
+                                    title: Text.rich(
+                                      TextSpan(
+                                        text: span.text,
+                                        style: span.style,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    children: [
+                                      for (final word in words)
+                                        ListTile(
+                                          dense: true,
+                                          contentPadding: const EdgeInsets.only(
+                                            left: 32,
+                                            right: 16,
+                                          ),
+                                          title: Text.rich(
+                                            TextSpan(
+                                              text: word.group(0),
+                                              style: span.style,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            )
                           : SelectableText.rich(
                               TextSpan(
                                 style: Theme.of(context).textTheme.bodyLarge
@@ -1117,6 +1162,9 @@ class _TranscribePageState extends State<TranscribePage> {
                     _TextViewMode.both =>
                       '${_comparison.differences.length} difference(s): '
                           'original text followed by transcript text.',
+                    _TextViewMode.tree =>
+                      '${_comparison.differences.length} difference(s): '
+                          'text grouped by span, then by word.',
                     _TextViewMode.prettyDiff =>
                       'Original-only text and transcript-only text are '
                           'highlighted.',
@@ -1134,7 +1182,7 @@ class _TranscribePageState extends State<TranscribePage> {
                 ),
               if (_recording)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                  padding: buttonPadding,
                   child: FilledButton.icon(
                     onPressed: _stopRecording,
                     icon: const Icon(Icons.stop),
@@ -1143,7 +1191,7 @@ class _TranscribePageState extends State<TranscribePage> {
                 )
               else if (_pendingAudioPath != null && !_transcribing)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                  padding: buttonPadding,
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 8,
@@ -1172,7 +1220,7 @@ class _TranscribePageState extends State<TranscribePage> {
                 )
               else
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                  padding: buttonPadding,
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 8,
