@@ -1,0 +1,59 @@
+name: test and build
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: uth
+      - run: |
+          mkdir auth
+          echo 'const apiToken="";' > auth/secrets.dart
+        working-directory: uth/lib
+      - run: flutter test --coverage
+        working-directory: uth
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: uth/coverage/lcov.info
+
+  build-apks:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: uth
+      - run: |
+          mkdir auth
+          echo 'const apiToken="";' > auth/secrets.dart
+        working-directory: uth/lib
+      - run: flutter build apk --release --split-per-abi
+        working-directory: uth
+      - uses: actions/upload-artifact@v4
+        with:
+          name: uth-android-apks
+          path: uth/build/app/outputs/flutter-apk/app-*-release.apk
