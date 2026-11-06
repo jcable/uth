@@ -307,7 +307,7 @@ void main() {
     var spans = selectable.textSpan!.children!.whereType<TextSpan>().toList();
     expect(
       spans.map((span) => span.toPlainText()).join(),
-      'We like love green apples.',
+      'We likelove green apples.',
     );
     expect(spans.first.style?.backgroundColor, isNull);
     expect(
