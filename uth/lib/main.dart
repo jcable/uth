@@ -230,6 +230,61 @@ class _Word {
   final String key;
 }
 
+class _Sentence {
+  const _Sentence(this.text, this.start, this.end);
+
+  final String text;
+  final int start;
+  final int end;
+}
+
+List<_Sentence> _sentences(String text) {
+  final sentences = <_Sentence>[];
+  final pattern = RegExp(
+    r'''[^.!?\n]+[.!?]+(?:["'’”»)\]]*)|[^.!?\n]+(?=\n|$)''',
+  );
+  for (final match in pattern.allMatches(text)) {
+    final rawSentence = match.group(0)!;
+    final sentence = rawSentence.trim();
+    if (sentence.isEmpty) continue;
+    final start = match.start + rawSentence.indexOf(sentence);
+    sentences.add(_Sentence(sentence, start, start + sentence.length));
+  }
+  return sentences;
+}
+
+List<TextSpan> _sentenceTextSpans(
+  String original,
+  _Sentence sentence,
+  List<TextDifference> differences,
+) {
+  final spans = <TextSpan>[];
+  var cursor = sentence.start;
+  for (final difference in differences) {
+    if (difference.start >= sentence.end) break;
+    final start = difference.start > sentence.start
+        ? difference.start
+        : sentence.start;
+    final end = difference.end < sentence.end ? difference.end : sentence.end;
+    if (start > cursor) {
+      spans.add(TextSpan(text: original.substring(cursor, start)));
+    }
+    if (end > start) {
+      spans.add(
+        TextSpan(
+          text: original.substring(start, end),
+          style: TextStyle(backgroundColor: Colors.green.shade100),
+        ),
+      );
+      cursor = end;
+    }
+  }
+  if (cursor < sentence.end) {
+    spans.add(TextSpan(text: original.substring(cursor, sentence.end)));
+  }
+  return spans;
+}
+
 enum _Edit { equal, substitute, delete, insert }
 
 enum _TextViewMode { reveal, both, tree, prettyDiff }
@@ -575,6 +630,7 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _playing = false;
   bool _transcribing = false;
   _TextViewMode _viewMode = _TextViewMode.reveal;
+  final Map<String, Set<int>> _expandedSentences = {};
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
@@ -684,6 +740,9 @@ class _TranscribePageState extends State<TranscribePage> {
         content: draft.content,
       );
       setState(() {
+        if (existing.content != updated.content) {
+          _expandedSentences.remove(existing.id);
+        }
         _texts = _texts
             .map((text) => text.id == existing.id ? updated : text)
             .toList();
@@ -714,6 +773,7 @@ class _TranscribePageState extends State<TranscribePage> {
     );
     if (confirmed != true || !mounted) return;
     setState(() {
+      _expandedSentences.remove(text.id);
       _texts = _texts.where((item) => item.id != text.id).toList();
       if (_selectedId == text.id) _selectedId = null;
     });
@@ -981,8 +1041,7 @@ class _TranscribePageState extends State<TranscribePage> {
     final spans = _spanBuilder.build(
       original: text.content,
       comparison: _comparison,
-      showTranscript:
-          _viewMode == _TextViewMode.both || _viewMode == _TextViewMode.tree,
+      showTranscript: _viewMode == _TextViewMode.both,
       revealColor: Theme.of(context).colorScheme.errorContainer,
       revealUnderlineColor: Theme.of(context).colorScheme.error,
       originalHighlightColor: Colors.green.shade100,
@@ -1012,6 +1071,9 @@ class _TranscribePageState extends State<TranscribePage> {
             addedTextStyle: addedTextStyle,
           )
         : null;
+    final sentences = _viewMode == _TextViewMode.tree
+        ? _sentences(text.content)
+        : const <_Sentence>[];
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -1097,17 +1159,36 @@ class _TranscribePageState extends State<TranscribePage> {
                           ? DefaultTextStyle(
                               style: defaultTextStyle,
                               child: ListView.builder(
-                                itemCount: spans.length,
+                                key: PageStorageKey<String>(
+                                  'sentence-tree-${text.id}',
+                                ),
+                                itemCount: sentences.length,
                                 itemBuilder: (context, index) {
-                                  final span = spans[index];
+                                  final sentence = sentences[index];
+                                  final expandedSentences = _expandedSentences
+                                      .putIfAbsent(text.id, () => <int>{});
                                   final words = RegExp(r'\S+')
-                                      .allMatches(span.text ?? '');
+                                      .allMatches(sentence.text);
                                   return ExpansionTile(
-                                    initiallyExpanded: true,
+                                    key: PageStorageKey<String>(
+                                      'sentence-${text.id}-$index-${sentence.text}',
+                                    ),
+                                    initiallyExpanded: expandedSentences
+                                        .contains(index),
+                                    onExpansionChanged: (expanded) {
+                                      if (expanded) {
+                                        expandedSentences.add(index);
+                                      } else {
+                                        expandedSentences.remove(index);
+                                      }
+                                    },
                                     title: Text.rich(
                                       TextSpan(
-                                        text: span.text,
-                                        style: span.style,
+                                        children: _sentenceTextSpans(
+                                          text.content,
+                                          sentence,
+                                          _comparison.differences,
+                                        ),
                                       ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -1123,7 +1204,21 @@ class _TranscribePageState extends State<TranscribePage> {
                                           title: Text.rich(
                                             TextSpan(
                                               text: word.group(0),
-                                              style: span.style,
+                                              style:
+                                                  _comparison.differences.any(
+                                                    (difference) =>
+                                                        difference.end >
+                                                            sentence.start +
+                                                                word.start &&
+                                                        difference.start <
+                                                            sentence.start +
+                                                                word.end,
+                                                  )
+                                                  ? TextStyle(
+                                                      backgroundColor:
+                                                          Colors.green.shade100,
+                                                    )
+                                                  : null,
                                             ),
                                           ),
                                         ),
@@ -1164,7 +1259,7 @@ class _TranscribePageState extends State<TranscribePage> {
                           'original text followed by transcript text.',
                     _TextViewMode.tree =>
                       '${_comparison.differences.length} difference(s): '
-                          'text grouped by span, then by word.',
+                          'sentences grouped by word.',
                     _TextViewMode.prettyDiff =>
                       'Original-only text and transcript-only text are '
                           'highlighted.',

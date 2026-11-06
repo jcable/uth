@@ -379,7 +379,7 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('tree view nests words under each text span', (tester) async {
+  testWidgets('tree view nests original words under sentences', (tester) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -392,7 +392,7 @@ void main() {
         {
           'id': 'tree',
           'name': 'Comparison',
-          'content': 'We like green apples.',
+          'content': 'We like green apples. Another sentence follows.',
           'transcript': 'We love green apples.',
         },
       ]),
@@ -404,9 +404,59 @@ void main() {
     await tester.tap(find.text('Tree'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(ExpansionTile), findsNWidgets(4));
-    expect(find.byType(ListTile), findsNWidgets(9));
-    expect(find.text('love'), findsNWidgets(2));
+    expect(find.byType(ExpansionTile), findsNWidgets(2));
+    expect(find.byType(ListTile), findsNWidgets(2));
+    expect(find.text('We like green apples.'), findsOneWidget);
+    expect(find.text('Another sentence follows.'), findsOneWidget);
+    expect(find.text('love'), findsNothing);
+
+    await tester.tap(find.text('We like green apples.'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ListTile), findsNWidgets(6));
+    expect(find.text('We'), findsOneWidget);
+    expect(find.text('love'), findsNothing);
+  });
+
+  testWidgets('tree expansion state survives scrolling', (tester) async {
+    tester.view.physicalSize = const Size(800, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sentences = List.generate(
+      30,
+      (index) => 'Sentence $index has several words.',
+    );
+    final content = sentences.join(' ');
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'scroll-tree',
+          'name': 'Scrollable tree',
+          'content': content,
+          'transcript': content,
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+    await tester.tap(find.text('Scrollable tree'));
+    await tester.pump();
+    await tester.tap(find.text('Tree'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sentence 0 has several words.'));
+    await tester.pumpAndSettle();
+    expect(find.text('several'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -1800));
+    await tester.pumpAndSettle();
+    expect(find.text('Sentence 20 has several words.'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, 1800));
+    await tester.pumpAndSettle();
+    expect(find.text('several'), findsOneWidget);
   });
 
   testWidgets('diff view scrolls when the text exceeds its viewport', (
