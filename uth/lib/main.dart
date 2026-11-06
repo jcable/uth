@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
@@ -56,20 +57,43 @@ class _MyAppState extends State<MyApp> {
   );
 }
 
-class _AboutPage extends StatelessWidget {
+class _AboutPage extends StatefulWidget {
   const _AboutPage();
+
+  @override
+  State<_AboutPage> createState() => _AboutPageState();
+}
+
+class _AboutPageState extends State<_AboutPage> {
+  late final Future<String> _aboutText = rootBundle.loadString(
+    'assets/about.md',
+  );
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('About')),
-    body: const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'Utterance helps you practice reading aloud and compare your spoken words with the original text.',
-          textAlign: TextAlign.center,
-        ),
-      ),
+    body: FutureBuilder<String>(
+      future: _aboutText,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: Text('Loading About content...'));
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('Unable to load About content: ${snapshot.error}'),
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: Text('About content is unavailable.'));
+        }
+        return Markdown(
+          data: snapshot.data!,
+          padding: const EdgeInsets.all(24),
+        );
+      },
     ),
   );
 }
