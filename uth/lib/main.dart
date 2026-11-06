@@ -1110,7 +1110,7 @@ class _TranscribePageState extends State<TranscribePage> {
                 ),
               if (_recording)
                 Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                   child: FilledButton.icon(
                     onPressed: _stopRecording,
                     icon: const Icon(Icons.stop),
@@ -1119,7 +1119,7 @@ class _TranscribePageState extends State<TranscribePage> {
                 )
               else if (_pendingAudioPath != null && !_transcribing)
                 Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 8,
@@ -1148,7 +1148,7 @@ class _TranscribePageState extends State<TranscribePage> {
                 )
               else
                 Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 8,
