@@ -247,7 +247,7 @@ class ComparisonTextSpanBuilder {
           ),
         );
         if (difference.transcript.isNotEmpty) {
-          spans.add(const TextSpan(text: ' '));
+          // spans.add(const TextSpan(text: ' '));
           spans.add(
             TextSpan(
               text: difference.transcript,
