@@ -49,9 +49,12 @@ jobs:
           cache: true
       - run: flutter pub get
         working-directory: uth
-      - run: |
+      - name: build
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
           mkdir auth
-          echo 'const apiToken="";' > auth/secrets.dart
+          echo "const apiToken=\"$API_TOKEN\";" > auth/secrets.dart
         working-directory: uth/lib
       - run: flutter build apk --release --split-per-abi
         working-directory: uth
