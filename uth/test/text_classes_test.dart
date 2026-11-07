@@ -11,12 +11,38 @@ void main() {
     expect(word.key, 'feathach');
   });
 
+  test('wordsFromText returns words with normalized comparison keys', () {
+    expect(
+      wordsFromText('  “Fèathach,”  NA H-ALBA!')
+          .map((word) => (word.text, word.start, word.end, word.key)),
+      [
+        ('“Fèathach,”', 2, 13, 'fèathach'),
+        ('NA', 15, 17, 'na'),
+        ('H-ALBA!', 18, 25, 'h-alba'),
+      ],
+    );
+  });
+
   test('Sentence exposes its text span', () {
     const sentence = Sentence('Seo seantans.', 4, 17);
 
     expect(sentence.text, 'Seo seantans.');
     expect(sentence.start, 4);
     expect(sentence.end, 17);
+  });
+
+  test('sentencesFromText returns trimmed sentences with original offsets', () {
+    const text = '  First sentence.\nSecond sentence?  Last sentence';
+
+    expect(
+      sentencesFromText(text)
+          .map((sentence) => (sentence.text, sentence.start, sentence.end)),
+      [
+        ('First sentence.', 2, 17),
+        ('Second sentence?', 18, 34),
+        ('Last sentence', 36, 49),
+      ],
+    );
   });
 
   test('EditStep exposes the edit and corresponding word indexes', () {

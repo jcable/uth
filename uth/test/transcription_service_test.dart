@@ -20,7 +20,7 @@ void main() {
         'https://jcable--whisper-transcribe-transcriber-transcribe.us-east.modal.run',
       );
       expect(request.method, 'POST');
-      expect(request.headers['authorization'], apiToken);
+      expect(request.headers['authorization'], 'Bearer $apiToken');
       expect(request.headers['content-type'], 'audio/mp4');
       expect(request.bodyBytes, [1, 2, 3]);
       return http.Response(

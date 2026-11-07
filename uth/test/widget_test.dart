@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uth/dictionary_search.dart';
 import 'package:uth/main.dart';
 import 'package:uth/text_classes.dart';
+import 'package:uth/text_spans.dart';
+import 'package:uth/transcribe_page.dart';
 
 const original = """
 Am biodhte ann a bhiodh iad sàbhailte?
@@ -265,7 +267,7 @@ void main() {
     );
     await _pumpApp(tester, documentsDirectory);
     await tester.tap(find.text('Mairead\'s story'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Both'));
     await tester.pump();
@@ -295,7 +297,7 @@ void main() {
     );
     await _pumpApp(tester, documentsDirectory);
     await tester.tap(find.text('Comparison'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Both'));
     await tester.pump();
@@ -401,7 +403,7 @@ void main() {
     );
     await _pumpApp(tester, documentsDirectory);
     await tester.tap(find.text('Comparison'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Tree'));
     await tester.pumpAndSettle();
@@ -444,7 +446,7 @@ void main() {
     );
     await _pumpApp(tester, documentsDirectory);
     await tester.tap(find.text('Scrollable tree'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Tree'));
     await tester.pumpAndSettle();
 
@@ -512,7 +514,7 @@ void main() {
       ),
     );
     await tester.tap(find.text('Dictionary tree'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Tree'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Fèathach is calm.'));
@@ -551,7 +553,7 @@ void main() {
     );
     await _pumpApp(tester, documentsDirectory);
     await tester.tap(find.text('Long comparison'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Diff'));
     await tester.pump();
 
