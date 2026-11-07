@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
 import 'package:record/record.dart';
@@ -563,8 +565,7 @@ class _TranscribePageState extends State<TranscribePage> {
     final spans = _spanBuilder.build(
       original: text.content,
       comparison: _comparison,
-      showTranscript:
-          _viewMode == _TextViewMode.both && _showTranscriptInBoth,
+      showTranscript: _viewMode == _TextViewMode.both && _showTranscriptInBoth,
       revealColor: Theme.of(context).colorScheme.errorContainer,
       revealUnderlineColor: Theme.of(context).colorScheme.error,
       originalHighlightColor: originalHighlightColor,
@@ -583,12 +584,8 @@ class _TranscribePageState extends State<TranscribePage> {
     final defaultTextStyle =
         Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.7) ??
         const TextStyle(height: 1.7);
-    final deletedTextStyle = TextStyle(
-      backgroundColor: originalHighlightColor,
-    );
-    final addedTextStyle = TextStyle(
-      backgroundColor: transcriptHighlightColor,
-    );
+    final deletedTextStyle = TextStyle(backgroundColor: originalHighlightColor);
+    final addedTextStyle = TextStyle(backgroundColor: transcriptHighlightColor);
     final prettyDiff = _viewMode == _TextViewMode.prettyDiff
         ? PrettyDiffText(
             oldText: text.content,
@@ -637,8 +634,7 @@ class _TranscribePageState extends State<TranscribePage> {
                     },
                   ),
                 ),
-              if (text.transcript.isNotEmpty &&
-                  _viewMode == _TextViewMode.both)
+              if (text.transcript.isNotEmpty && _viewMode == _TextViewMode.both)
                 SwitchListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 24),
                   dense: true,
@@ -801,7 +797,7 @@ class _TranscribePageState extends State<TranscribePage> {
                                                       left: 64,
                                                       right: 16,
                                                     ),
-                                                title: Text(
+                                                title: HtmlWidget(
                                                   'Grammar: ${entry.grammar}',
                                                 ),
                                               ),

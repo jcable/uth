@@ -584,7 +584,18 @@ void main() {
     expect(find.text('fèathach'), findsOneWidget);
     await tester.tap(find.text('fèathach'));
     await tester.pumpAndSettle();
-    expect(find.text('Grammar: <i>comp.</i> -aiche'), findsOneWidget);
+    final grammar = tester
+        .widgetList<RichText>(find.byType(RichText))
+        .singleWhere(
+          (widget) => widget.text.toPlainText() == 'Grammar: comp. -aiche',
+        )
+        .text;
+    bool hasItalicComp(InlineSpan span) =>
+        span is TextSpan &&
+        ((span.text == 'comp.' && span.style?.fontStyle == FontStyle.italic) ||
+            (span.children?.any(hasItalicComp) ?? false));
+    expect(grammar.toPlainText(), 'Grammar: comp. -aiche');
+    expect(hasItalicComp(grammar), isTrue);
     expect(find.text('IPA: /fia.əx/'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Play fèathach'));
