@@ -1390,14 +1390,19 @@ class _TranscribePageState extends State<TranscribePage> {
             ],
           ),
           if (_transcribing)
-            const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 8),
-                  Text('Transcribing…'),
-                ],
+            Positioned.fill(
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surface,
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 8),
+                      Text('Transcribing…'),
+                    ],
+                  ),
+                ),
               ),
             ),
         ],
