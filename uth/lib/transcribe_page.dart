@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:archive/archive.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -25,30 +22,6 @@ typedef DictionaryAudioDownloader = Future<File?> Function(
   GaelicDictionaryEntry entry,
 );
 typedef DictionaryAudioPlayer = Future<void> Function(File file);
-
-String _safeExportName(String name) {
-  var folderName = name
-      .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
-      .replaceAll(RegExp(r'[. ]+$'), '');
-  if (folderName.isEmpty) folderName = 'text';
-  if (RegExp(
-    r'^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)',
-    caseSensitive: false,
-  ).hasMatch(folderName)) {
-    folderName = '_$folderName';
-  }
-  return folderName;
-}
-
-Uint8List createSavedTextArchive(SavedText text) {
-  final folderName = _safeExportName(text.name);
-  final archive = Archive()
-    ..addFile(ArchiveFile.string('$folderName/original.txt', text.content))
-    ..addFile(
-      ArchiveFile.string('$folderName/transcript.txt', text.transcript),
-    );
-  return ZipEncoder().encodeBytes(archive);
-}
 
 enum _TextViewMode { reveal, both, tree, prettyDiff }
 
@@ -248,7 +221,7 @@ class _TranscribePageState extends State<TranscribePage> {
 
   Future<void> _exportText(SavedText text) async {
     try {
-      final fileName = '${_safeExportName(text.name)}.zip';
+      final fileName = '${safeExportName(text.name)}.zip';
       final savedFile = await FilePicker.saveFile(
         fileName: fileName,
         bytes: createSavedTextArchive(text),

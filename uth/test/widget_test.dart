@@ -9,6 +9,7 @@ import 'package:uth/main.dart';
 import 'package:uth/text_classes.dart';
 import 'package:uth/text_spans.dart';
 import 'package:uth/transcribe_page.dart';
+import 'package:uth/saved_texts_page.dart';
 
 const original = """
 Am biodhte ann a bhiodh iad sàbhailte?

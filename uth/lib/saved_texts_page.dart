@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'package:archive/archive.dart';
 
 import 'about_page.dart';
 import 'settings_page.dart';
@@ -117,4 +119,28 @@ class SavedTextsPage extends StatelessWidget {
       ],
     ),
   );
+}
+
+String safeExportName(String name) {
+  var folderName = name
+      .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
+      .replaceAll(RegExp(r'[. ]+$'), '');
+  if (folderName.isEmpty) folderName = 'text';
+  if (RegExp(
+    r'^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)',
+    caseSensitive: false,
+  ).hasMatch(folderName)) {
+    folderName = '_$folderName';
+  }
+  return folderName;
+}
+
+Uint8List createSavedTextArchive(SavedText text) {
+  final folderName = safeExportName(text.name);
+  final archive = Archive()
+    ..addFile(ArchiveFile.string('$folderName/original.txt', text.content))
+    ..addFile(
+      ArchiveFile.string('$folderName/transcript.txt', text.transcript),
+    );
+  return ZipEncoder().encodeBytes(archive);
 }
