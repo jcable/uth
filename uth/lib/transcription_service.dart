@@ -15,7 +15,7 @@ Future<String> transcribeAudio(File file, {http.Client? client}) async {
     final response = await requestClient
         .post(
           Uri.parse(_endpointUrl),
-          headers: {'Authorization': apiToken, 'Content-Type': 'audio/mp4'},
+          headers: {'Authorization': 'Bearer $apiToken', 'Content-Type': 'audio/mp4'},
           body: await file.readAsBytes(),
         )
         .timeout(const Duration(seconds: 180));
