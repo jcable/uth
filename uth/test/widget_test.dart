@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uth/dictionary_search.dart';
 import 'package:uth/main.dart';
+import 'package:uth/text_classes.dart';
 
 const original = """
 Am biodhte ann a bhiodh iad sàbhailte?

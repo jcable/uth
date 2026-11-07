@@ -14,6 +14,7 @@ import 'package:pretty_diff_text/pretty_diff_text.dart';
 import 'package:record/record.dart';
 
 import 'dictionary_search.dart';
+import 'text_classes.dart';
 import 'transcription_service.dart';
 
 typedef DictionarySearch = Future<List<GaelicDictionaryEntry>> Function(
@@ -158,42 +159,6 @@ class _SettingsPageState extends State<_SettingsPage> {
   );
 }
 
-class SavedText {
-  const SavedText({
-    required this.id,
-    required this.name,
-    required this.content,
-    this.transcript = '',
-  });
-
-  final String id;
-  final String name;
-  final String content;
-  final String transcript;
-
-  SavedText copyWith({String? name, String? content, String? transcript}) =>
-      SavedText(
-        id: id,
-        name: name ?? this.name,
-        content: content ?? this.content,
-        transcript: transcript ?? this.transcript,
-      );
-
-  Map<String, Object?> toJson() => {
-    'id': id,
-    'name': name,
-    'content': content,
-    'transcript': transcript,
-  };
-
-  factory SavedText.fromJson(Map<String, dynamic> json) => SavedText(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    content: json['content'] as String,
-    transcript: json['transcript'] as String? ?? '',
-  );
-}
-
 String _safeExportName(String name) {
   var folderName = name
       .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
@@ -218,45 +183,8 @@ Uint8List createSavedTextArchive(SavedText text) {
   return ZipEncoder().encodeBytes(archive);
 }
 
-class TextDifference {
-  const TextDifference({
-    required this.start,
-    required this.end,
-    required this.transcript,
-  });
-
-  final int start;
-  final int end;
-  final String transcript;
-}
-
-class TextComparison {
-  const TextComparison(this.differences);
-
-  final List<TextDifference> differences;
-
-  bool get matches => differences.isEmpty;
-}
-
-class _Word {
-  const _Word(this.text, this.start, this.end, this.key);
-
-  final String text;
-  final int start;
-  final int end;
-  final String key;
-}
-
-class _Sentence {
-  const _Sentence(this.text, this.start, this.end);
-
-  final String text;
-  final int start;
-  final int end;
-}
-
-List<_Sentence> _sentences(String text) {
-  final sentences = <_Sentence>[];
+List<Sentence> _sentences(String text) {
+  final sentences = <Sentence>[];
   final pattern = RegExp(
     r'''[^.!?\n]+[.!?]+(?:["'’”»)\]]*)|[^.!?\n]+(?=\n|$)''',
   );
@@ -265,14 +193,14 @@ List<_Sentence> _sentences(String text) {
     final sentence = rawSentence.trim();
     if (sentence.isEmpty) continue;
     final start = match.start + rawSentence.indexOf(sentence);
-    sentences.add(_Sentence(sentence, start, start + sentence.length));
+    sentences.add(Sentence(sentence, start, start + sentence.length));
   }
   return sentences;
 }
 
 List<TextSpan> _sentenceTextSpans(
   String original,
-  _Sentence sentence,
+  Sentence sentence,
   List<TextDifference> differences,
 ) {
   final spans = <TextSpan>[];
@@ -301,8 +229,6 @@ List<TextSpan> _sentenceTextSpans(
   }
   return spans;
 }
-
-enum _Edit { equal, substitute, delete, insert }
 
 enum _TextViewMode { reveal, both, tree, prettyDiff }
 
@@ -394,21 +320,6 @@ class ComparisonTextSpanBuilder {
   }
 }
 
-class _EditStep {
-  const _EditStep(this.edit, this.originalIndex, this.transcriptIndex);
-
-  final _Edit edit;
-  final int? originalIndex;
-  final int? transcriptIndex;
-}
-
-class _TextDraft {
-  const _TextDraft(this.name, this.content);
-
-  final String name;
-  final String content;
-}
-
 class _TextEditorDialog extends StatefulWidget {
   const _TextEditorDialog({required this.existing});
 
@@ -480,7 +391,7 @@ class _TextEditorDialogState extends State<_TextEditorDialog> {
           if (!_formKey.currentState!.validate()) return;
           Navigator.pop(
             context,
-            _TextDraft(_nameController.text.trim(), _contentController.text),
+            TextDraft(_nameController.text.trim(), _contentController.text),
           );
         },
         child: const Text('Save'),
@@ -489,8 +400,8 @@ class _TextEditorDialogState extends State<_TextEditorDialog> {
   );
 }
 
-List<_Word> _words(String text) {
-  final words = <_Word>[];
+List<Word> _words(String text) {
+  final words = <Word>[];
   for (final match in RegExp(r'\S+').allMatches(text)) {
     final raw = match.group(0)!;
     final key = StringBuffer();
@@ -502,13 +413,13 @@ List<_Word> _words(String text) {
       key.write(value);
     }
     if (key.isNotEmpty) {
-      words.add(_Word(raw, match.start, match.end, key.toString()));
+      words.add(Word(raw, match.start, match.end, key.toString()));
     }
   }
   return words;
 }
 
-List<_EditStep> _alignWords(List<_Word> original, List<_Word> transcript) {
+List<EditStep> _alignWords(List<Word> original, List<Word> transcript) {
   final rows = original.length + 1;
   final columns = transcript.length + 1;
   final costs = List.generate(rows, (_) => List<int>.filled(columns, 0));
@@ -530,24 +441,24 @@ List<_EditStep> _alignWords(List<_Word> original, List<_Word> transcript) {
     }
   }
 
-  final steps = <_EditStep>[];
+  final steps = <EditStep>[];
   var i = 0;
   var j = 0;
   while (i < original.length || j < transcript.length) {
     if (i < original.length &&
         j < transcript.length &&
         original[i].key == transcript[j].key) {
-      steps.add(_EditStep(_Edit.equal, i++, j++));
+      steps.add(EditStep(Edit.equal, i++, j++));
       continue;
     }
     if (i < original.length &&
         j < transcript.length &&
         costs[i][j] == costs[i + 1][j + 1] + 1) {
-      steps.add(_EditStep(_Edit.substitute, i++, j++));
+      steps.add(EditStep(Edit.substitute, i++, j++));
     } else if (i < original.length && costs[i][j] == costs[i + 1][j] + 1) {
-      steps.add(_EditStep(_Edit.delete, i++, null));
+      steps.add(EditStep(Edit.delete, i++, null));
     } else {
-      steps.add(_EditStep(_Edit.insert, null, j++));
+      steps.add(EditStep(Edit.insert, null, j++));
     }
   }
   return steps;
@@ -564,14 +475,14 @@ TextComparison compareText(String original, String transcript) {
   var originalPosition = 0;
 
   while (index < steps.length) {
-    if (steps[index].edit == _Edit.equal) {
+    if (steps[index].edit == Edit.equal) {
       originalPosition = steps[index].originalIndex! + 1;
       index++;
       continue;
     }
 
-    final changedSteps = <_EditStep>[];
-    while (index < steps.length && steps[index].edit != _Edit.equal) {
+    final changedSteps = <EditStep>[];
+    while (index < steps.length && steps[index].edit != Edit.equal) {
       changedSteps.add(steps[index++]);
     }
 
@@ -742,7 +653,7 @@ class _TranscribePageState extends State<TranscribePage> {
   }
 
   Future<void> _editText({SavedText? existing}) async {
-    final draft = await showDialog<_TextDraft>(
+    final draft = await showDialog<TextDraft>(
       context: context,
       builder: (context) => _TextEditorDialog(existing: existing),
     );
@@ -1144,7 +1055,7 @@ class _TranscribePageState extends State<TranscribePage> {
         : null;
     final sentences = _viewMode == _TextViewMode.tree
         ? _sentences(text.content)
-        : const <_Sentence>[];
+        : const <Sentence>[];
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
