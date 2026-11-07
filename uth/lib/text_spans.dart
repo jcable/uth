@@ -7,6 +7,7 @@ List<TextSpan> sentenceTextSpans(
   String original,
   Sentence sentence,
   List<TextDifference> differences,
+  Color highlightColor,
 ) {
   final spans = <TextSpan>[];
   var cursor = sentence.start;
@@ -23,7 +24,7 @@ List<TextSpan> sentenceTextSpans(
       spans.add(
         TextSpan(
           text: original.substring(start, end),
-          style: TextStyle(backgroundColor: Colors.green.shade100),
+          style: TextStyle(backgroundColor: highlightColor),
         ),
       );
       cursor = end;

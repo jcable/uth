@@ -143,6 +143,7 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _recording = false;
   bool _playing = false;
   bool _transcribing = false;
+  bool _showTranscriptInBoth = true;
   _TextViewMode _viewMode = _TextViewMode.reveal;
   final Map<String, Set<int>> _expandedSentences = {};
   final Map<String, List<GaelicDictionaryEntry>> _dictionaryEntries = {};
@@ -552,14 +553,22 @@ class _TranscribePageState extends State<TranscribePage> {
   }
 
   Widget _buildTextView(SavedText text) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final originalHighlightColor = isDarkMode
+        ? Colors.green.shade900
+        : Colors.green.shade100;
+    final transcriptHighlightColor = isDarkMode
+        ? Colors.red.shade900
+        : Colors.red.shade100;
     final spans = _spanBuilder.build(
       original: text.content,
       comparison: _comparison,
-      showTranscript: _viewMode == _TextViewMode.both,
+      showTranscript:
+          _viewMode == _TextViewMode.both && _showTranscriptInBoth,
       revealColor: Theme.of(context).colorScheme.errorContainer,
       revealUnderlineColor: Theme.of(context).colorScheme.error,
-      originalHighlightColor: Colors.green.shade100,
-      transcriptHighlightColor: Colors.red.shade100,
+      originalHighlightColor: originalHighlightColor,
+      transcriptHighlightColor: transcriptHighlightColor,
       onDifferenceTap: _showDifference,
     );
 
@@ -574,8 +583,12 @@ class _TranscribePageState extends State<TranscribePage> {
     final defaultTextStyle =
         Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.7) ??
         const TextStyle(height: 1.7);
-    final deletedTextStyle = TextStyle(backgroundColor: Colors.green.shade100);
-    final addedTextStyle = TextStyle(backgroundColor: Colors.red.shade100);
+    final deletedTextStyle = TextStyle(
+      backgroundColor: originalHighlightColor,
+    );
+    final addedTextStyle = TextStyle(
+      backgroundColor: transcriptHighlightColor,
+    );
     final prettyDiff = _viewMode == _TextViewMode.prettyDiff
         ? PrettyDiffText(
             oldText: text.content,
@@ -623,6 +636,16 @@ class _TranscribePageState extends State<TranscribePage> {
                       _setState(() => _viewMode = selection.first);
                     },
                   ),
+                ),
+              if (text.transcript.isNotEmpty &&
+                  _viewMode == _TextViewMode.both)
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                  dense: true,
+                  title: const Text('Show transcript'),
+                  value: _showTranscriptInBoth,
+                  onChanged: (value) =>
+                      _setState(() => _showTranscriptInBoth = value),
                 ),
               Expanded(
                 child: LayoutBuilder(
@@ -690,6 +713,7 @@ class _TranscribePageState extends State<TranscribePage> {
                                           text.content,
                                           sentence,
                                           _comparison.differences,
+                                          originalHighlightColor,
                                         ),
                                       ),
                                       maxLines: 2,
@@ -720,7 +744,7 @@ class _TranscribePageState extends State<TranscribePage> {
                                                   )
                                                   ? TextStyle(
                                                       backgroundColor:
-                                                          Colors.green.shade100,
+                                                          originalHighlightColor,
                                                     )
                                                   : null,
                                             ),

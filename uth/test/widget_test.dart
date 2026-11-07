@@ -253,6 +253,52 @@ void main() {
     expect(find.byType(SwitchListTile), findsNothing);
   });
 
+  testWidgets('dark mode uses darker comparison highlight colors', (
+    tester,
+  ) async {
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'dark-comparison',
+          'name': 'Dark comparison',
+          'content': 'We like apples.',
+          'transcript': 'We love apples.',
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Dark comparison'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Both'));
+    await tester.pumpAndSettle();
+
+    final spans = tester
+        .widget<SelectableText>(find.byType(SelectableText))
+        .textSpan!
+        .children!
+        .whereType<TextSpan>();
+    expect(
+      spans.singleWhere((span) => span.text == 'like').style?.backgroundColor,
+      Colors.green.shade900,
+    );
+    expect(
+      spans.singleWhere((span) => span.text == 'love').style?.backgroundColor,
+      Colors.red.shade900,
+    );
+  });
+
   testWidgets('reveal view displays the original text', (tester) async {
     await _writeSavedTexts(
       tester,
@@ -319,6 +365,17 @@ void main() {
       Colors.red.shade100,
     );
     expect(spans.last.style?.backgroundColor, isNull);
+
+    await tester.tap(find.byType(Switch));
+    await tester.pump();
+    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
+    expect(selectable.textSpan!.toPlainText(), 'We like green apples.');
+
+    await tester.tap(find.byType(Switch));
+    await tester.pump();
+    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
+    expect(selectable.textSpan!.toPlainText(), 'We likelove green apples.');
+
     await tester.tap(find.text('Reveal'));
     await tester.pump();
     selectable = tester.widget<SelectableText>(find.byType(SelectableText));
