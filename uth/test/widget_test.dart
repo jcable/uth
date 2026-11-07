@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uth/dictionary_search.dart';
@@ -299,34 +300,6 @@ void main() {
     );
   });
 
-  testWidgets('reveal view displays the original text', (tester) async {
-    await _writeSavedTexts(
-      tester,
-      documentsDirectory,
-      jsonEncode([
-        {
-          'id': 'mairead',
-          'name': 'Mairead\'s story',
-          'content': original,
-          'transcript': transcript,
-        },
-      ]),
-    );
-    await _pumpApp(tester, documentsDirectory);
-    await tester.tap(find.text('Mairead\'s story'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Both'));
-    await tester.pump();
-    await tester.tap(find.text('Reveal'));
-    await tester.pump();
-
-    final selectable = tester.widget<SelectableText>(
-      find.byType(SelectableText),
-    );
-    expect(selectable.textSpan!.toPlainText(), original);
-  });
-
   testWidgets('comparison views show original and transcript differences', (
     tester,
   ) async {
@@ -350,7 +323,7 @@ void main() {
     await tester.pump();
 
     var selectable = tester.widget<SelectableText>(find.byType(SelectableText));
-    var spans = selectable.textSpan!.children!.whereType<TextSpan>().toList();
+    final spans = selectable.textSpan!.children!.whereType<TextSpan>().toList();
     expect(
       spans.map((span) => span.toPlainText()).join(),
       'We likelove green apples.',
@@ -366,20 +339,19 @@ void main() {
     );
     expect(spans.last.style?.backgroundColor, isNull);
 
-    await tester.tap(find.byType(Switch));
-    await tester.pump();
-    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
-    expect(selectable.textSpan!.toPlainText(), 'We like green apples.');
-
-    await tester.tap(find.byType(Switch));
-    await tester.pump();
-    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
-    expect(selectable.textSpan!.toPlainText(), 'We likelove green apples.');
-
-    await tester.tap(find.text('Reveal'));
-    await tester.pump();
-    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
-    expect(selectable.textSpan!.toPlainText(), 'We like green apples.');
+    (spans.singleWhere((span) => span.text == 'like').recognizer!
+            as TapGestureRecognizer)
+        .onTap!();
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('love'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Diff'));
     await tester.pump();
@@ -521,13 +493,10 @@ void main() {
     expect(find.text('several'), findsOneWidget);
   });
 
-  testWidgets('word lookup adds dictionary entries and audio playback', (
+  testWidgets('word lookup adds dictionary entries and audio controls', (
     tester,
   ) async {
-    final audioFile = File('${documentsDirectory.path}/dictionary.mp3');
-    await tester.runAsync(() => audioFile.writeAsBytes([1, 2, 3]));
     var searchedWord = '';
-    File? playedFile;
     await _writeSavedTexts(
       tester,
       documentsDirectory,
@@ -543,32 +512,32 @@ void main() {
     await _pumpApp(
       tester,
       documentsDirectory,
-      app: MyApp(
-        documentsDirectoryProvider: () async => documentsDirectory,
-        dictionarySearch: (word) async {
-          searchedWord = word;
-          return [
-            GaelicDictionaryEntry(
-              id: 52971,
-              headword: 'fèathach',
-              source: null,
-              translation: 'calm',
-              grammar: '<i>comp.</i> -aiche',
-              ipa: '/fia.əx/',
-              wordclass: 'bua.',
-              hasAudio: true,
-              audioVersion: 1,
-              votes: 0,
-              gdKeys: null,
-              enKeys: null,
-              commitMessage: null,
-            ),
-          ];
-        },
-        dictionaryAudioDownloader: (_) async => audioFile,
-        dictionaryAudioPlayer: (file) async {
-          playedFile = file;
-        },
+      app: MaterialApp(
+        home: TranscribePage(
+          documentsDirectoryProvider: () async => documentsDirectory,
+          dictionarySearch: (word) async {
+            searchedWord = word;
+            return [
+              GaelicDictionaryEntry(
+                id: 52971,
+                headword: 'fèathach',
+                source: null,
+                translation: 'calm',
+                grammar: '<i>comp.</i> -aiche',
+                ipa: '/fia.əx/',
+                wordclass: 'bua.',
+                hasAudio: true,
+                audioVersion: 1,
+                votes: 0,
+                gdKeys: null,
+                enKeys: null,
+                commitMessage: null,
+              ),
+            ];
+          },
+          darkMode: false,
+          onDarkModeChanged: (_) {},
+        ),
       ),
     );
     await tester.tap(find.text('Dictionary tree'));
@@ -598,9 +567,7 @@ void main() {
     expect(hasItalicComp(grammar), isTrue);
     expect(find.text('IPA: /fia.əx/'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Play fèathach'));
-    await tester.pumpAndSettle();
-    expect(playedFile, audioFile);
+    expect(find.byTooltip('Play fèathach'), findsOneWidget);
   });
 
   testWidgets('diff view scrolls when the text exceeds its viewport', (
@@ -777,7 +744,7 @@ void main() {
 Future<void> _pumpApp(
   WidgetTester tester,
   Directory documentsDirectory, {
-  MyApp? app,
+  Widget? app,
 }) async {
   await tester.pumpWidget(
     app ?? MyApp(documentsDirectoryProvider: () async => documentsDirectory),

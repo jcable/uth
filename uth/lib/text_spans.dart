@@ -65,11 +65,20 @@ class ComparisonTextSpanBuilder {
         difference.start,
         difference.end,
       );
+      TapGestureRecognizer? recognizer;
+      if (onDifferenceTap != null) {
+        if (_recognizers.length == recognizerIndex) {
+          _recognizers.add(TapGestureRecognizer());
+        }
+        recognizer = _recognizers[recognizerIndex++]
+          ..onTap = () => onDifferenceTap(difference);
+      }
       if (showTranscript) {
         spans.add(
           TextSpan(
             text: originalSegment,
             style: TextStyle(backgroundColor: originalHighlightColor),
+            recognizer: recognizer,
           ),
         );
         if (difference.transcript.isNotEmpty) {
@@ -77,18 +86,11 @@ class ComparisonTextSpanBuilder {
             TextSpan(
               text: difference.transcript,
               style: TextStyle(backgroundColor: transcriptHighlightColor),
+              recognizer: recognizer,
             ),
           );
         }
       } else {
-        TapGestureRecognizer? recognizer;
-        if (onDifferenceTap != null) {
-          if (_recognizers.length == recognizerIndex) {
-            _recognizers.add(TapGestureRecognizer());
-          }
-          recognizer = _recognizers[recognizerIndex++]
-            ..onTap = () => onDifferenceTap(difference);
-        }
         spans.add(
           TextSpan(
             text: originalSegment,

@@ -4,6 +4,10 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+typedef DictionarySearch = Future<List<GaelicDictionaryEntry>> Function(
+  String abairt,
+);
+
 class GaelicDictionaryEntry {
   const GaelicDictionaryEntry({
     required this.id,

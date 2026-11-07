@@ -5,7 +5,9 @@ import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+
+import 'sentence_tree_item.dart';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
 import 'package:record/record.dart';
@@ -17,15 +19,7 @@ import 'text_classes.dart';
 import 'text_spans.dart';
 import 'transcription_service.dart';
 
-typedef DictionarySearch = Future<List<GaelicDictionaryEntry>> Function(
-  String abairt,
-);
-typedef DictionaryAudioDownloader = Future<File?> Function(
-  GaelicDictionaryEntry entry,
-);
-typedef DictionaryAudioPlayer = Future<void> Function(File file);
-
-enum _TextViewMode { reveal, both, tree, prettyDiff }
+enum _TextViewMode { both, tree, prettyDiff }
 
 class _TextEditorDialog extends StatefulWidget {
   const _TextEditorDialog({required this.existing});
@@ -112,16 +106,12 @@ class TranscribePage extends StatefulWidget {
     super.key,
     this.documentsDirectoryProvider,
     this.dictionarySearch,
-    this.dictionaryAudioDownloader,
-    this.dictionaryAudioPlayer,
     required this.darkMode,
     required this.onDarkModeChanged,
   });
 
   final Future<Directory> Function()? documentsDirectoryProvider;
   final DictionarySearch? dictionarySearch;
-  final DictionaryAudioDownloader? dictionaryAudioDownloader;
-  final DictionaryAudioPlayer? dictionaryAudioPlayer;
   final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
 
@@ -145,12 +135,8 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _recording = false;
   bool _playing = false;
   bool _transcribing = false;
-  bool _showTranscriptInBoth = true;
-  _TextViewMode _viewMode = _TextViewMode.reveal;
+  _TextViewMode _viewMode = _TextViewMode.both;
   final Map<String, Set<int>> _expandedSentences = {};
-  final Map<String, List<GaelicDictionaryEntry>> _dictionaryEntries = {};
-  final Set<String> _dictionaryLoading = {};
-  final Map<int, Future<File?>> _dictionaryAudioDownloads = {};
   final ValueNotifier<int> _detailPageRevision = ValueNotifier<int>(0);
 
   void _setState(VoidCallback callback) {
@@ -420,65 +406,6 @@ class _TranscribePageState extends State<TranscribePage> {
     return player;
   }
 
-  Future<void> _searchDictionary(String word) async {
-    _setState(() {
-      _dictionaryLoading.add(word);
-      _dictionaryEntries.remove(word);
-      _error = null;
-    });
-
-    try {
-      final entries =
-          await (widget.dictionarySearch?.call(word) ??
-              searchGaelicDictionary(abairt: word));
-      if (!mounted) return;
-      _setState(() => _dictionaryEntries[word] = entries);
-      for (final entry in entries.where((entry) => entry.hasAudio)) {
-        unawaited(_downloadDictionaryAudio(entry));
-      }
-    } catch (error) {
-      if (mounted) {
-        _setState(() => _error = 'Dictionary search failed: $error');
-      }
-    } finally {
-      if (mounted) _setState(() => _dictionaryLoading.remove(word));
-    }
-  }
-
-  Future<File?> _downloadDictionaryAudio(GaelicDictionaryEntry entry) async {
-    final future = _dictionaryAudioDownloads.putIfAbsent(entry.id, () async {
-      try {
-        return await (widget.dictionaryAudioDownloader?.call(entry) ??
-            downloadGaelicDictionaryAudio(entry));
-      } catch (error) {
-        if (mounted) {
-          _setState(
-            () => _error = 'Could not download dictionary audio: $error',
-          );
-        }
-        return null;
-      }
-    });
-    final file = await future;
-    if (file == null) _dictionaryAudioDownloads.remove(entry.id);
-    return file;
-  }
-
-  Future<void> _playDictionaryAudio(GaelicDictionaryEntry entry) async {
-    try {
-      final file = await _downloadDictionaryAudio(entry);
-      if (file == null) return;
-      final audioPlayer = widget.dictionaryAudioPlayer;
-      if (audioPlayer != null) {
-        await audioPlayer(file);
-      } else {
-        await _playbackPlayer().play(DeviceFileSource(file.path));
-      }
-    } catch (error) {
-      if (mounted) _setState(() => _error = 'Playback failed: $error');
-    }
-  }
-
   Future<void> _stopPlayback() async {
     final player = _player;
     if (player == null || player.state == PlayerState.stopped) return;
@@ -534,22 +461,16 @@ class _TranscribePageState extends State<TranscribePage> {
     return transcribeAudio(file);
   }
 
-  void _showDifference(TextDifference difference) {
+  void _showDifference(TextDifference difference, String original) {
+    final differenceText = difference.transcript.isNotEmpty
+        ? difference.transcript
+        : original.substring(difference.start, difference.end);
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Transcript difference'),
-        content: Text(
-          difference.transcript.isEmpty
-              ? 'No matching words were recognized for this section.'
-              : difference.transcript,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+      builder: (context) => SentenceTreeChildrenDialog(
+        text: differenceText,
+        dictionarySearch: widget.dictionarySearch,
+        playbackPlayer: _playbackPlayer,
       ),
     );
   }
@@ -565,12 +486,13 @@ class _TranscribePageState extends State<TranscribePage> {
     final spans = _spanBuilder.build(
       original: text.content,
       comparison: _comparison,
-      showTranscript: _viewMode == _TextViewMode.both && _showTranscriptInBoth,
+      showTranscript: true,
       revealColor: Theme.of(context).colorScheme.errorContainer,
       revealUnderlineColor: Theme.of(context).colorScheme.error,
       originalHighlightColor: originalHighlightColor,
       transcriptHighlightColor: transcriptHighlightColor,
-      onDifferenceTap: _showDifference,
+      onDifferenceTap: (difference) =>
+          _showDifference(difference, text.content),
     );
 
     final isRecordingSelection = _selection != null && !_selection!.isCollapsed;
@@ -612,10 +534,6 @@ class _TranscribePageState extends State<TranscribePage> {
                   child: SegmentedButton<_TextViewMode>(
                     segments: const [
                       ButtonSegment(
-                        value: _TextViewMode.reveal,
-                        label: Text('Reveal'),
-                      ),
-                      ButtonSegment(
                         value: _TextViewMode.both,
                         label: Text('Both'),
                       ),
@@ -633,15 +551,6 @@ class _TranscribePageState extends State<TranscribePage> {
                       _setState(() => _viewMode = selection.first);
                     },
                   ),
-                ),
-              if (text.transcript.isNotEmpty && _viewMode == _TextViewMode.both)
-                SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                  dense: true,
-                  title: const Text('Show transcript'),
-                  value: _showTranscriptInBoth,
-                  onChanged: (value) =>
-                      _setState(() => _showTranscriptInBoth = value),
                 ),
               Expanded(
                 child: LayoutBuilder(
@@ -685,137 +594,60 @@ class _TranscribePageState extends State<TranscribePage> {
                                 ),
                                 itemCount: sentences.length,
                                 itemBuilder: (context, index) {
-                                  final sentence = sentences[index];
                                   final expandedSentences = _expandedSentences
                                       .putIfAbsent(text.id, () => <int>{});
-                                  final words = RegExp(r'\S+')
-                                      .allMatches(sentence.text);
-                                  return ExpansionTile(
-                                    key: PageStorageKey<String>(
-                                      'sentence-${text.id}-$index-${sentence.text}',
-                                    ),
-                                    initiallyExpanded: expandedSentences
-                                        .contains(index),
-                                    onExpansionChanged: (expanded) {
-                                      if (expanded) {
-                                        expandedSentences.add(index);
-                                      } else {
-                                        expandedSentences.remove(index);
+                                  return SentenceTreeItem(
+                                    textId: text.id,
+                                    index: index,
+                                    sentence: sentences[index],
+                                    originalText: text.content,
+                                    comparison: _comparison,
+                                    originalHighlightColor:
+                                        originalHighlightColor,
+                                    expandedSentences: expandedSentences,
+                                    dictionarySearch: widget.dictionarySearch,
+                                    onSearchStarted: () {
+                                      if (mounted) {
+                                        _setState(() => _error = null);
                                       }
                                     },
-                                    title: Text.rich(
-                                      TextSpan(
-                                        children: sentenceTextSpans(
-                                          text.content,
-                                          sentence,
-                                          _comparison.differences,
-                                          originalHighlightColor,
-                                        ),
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    children: [
-                                      for (final word in words) ...[
-                                        ListTile(
-                                          dense: true,
-                                          contentPadding: const EdgeInsets.only(
-                                            left: 32,
-                                            right: 16,
-                                          ),
-                                          onTap: () =>
-                                              _searchDictionary(word.group(0)!),
-                                          title: Text.rich(
-                                            TextSpan(
-                                              text: word.group(0),
-                                              style:
-                                                  _comparison.differences.any(
-                                                    (difference) =>
-                                                        difference.end >
-                                                            sentence.start +
-                                                                word.start &&
-                                                        difference.start <
-                                                            sentence.start +
-                                                                word.end,
-                                                  )
-                                                  ? TextStyle(
-                                                      backgroundColor:
-                                                          originalHighlightColor,
-                                                    )
-                                                  : null,
-                                            ),
-                                          ),
-                                        ),
-                                        if (_dictionaryLoading.contains(
-                                          word.group(0),
-                                        ))
-                                          const ListTile(
-                                            dense: true,
-                                            contentPadding: EdgeInsets.only(
-                                              left: 48,
-                                            ),
-                                            title: LinearProgressIndicator(),
-                                          ),
-                                        for (final entry
-                                            in _dictionaryEntries[word.group(
-                                                  0,
-                                                )] ??
-                                                const <GaelicDictionaryEntry>[])
-                                          ExpansionTile(
-                                            key: PageStorageKey<String>(
-                                              'dictionary-${word.group(0)}-${entry.id}',
-                                            ),
-                                            dense: true,
-                                            tilePadding: const EdgeInsets.only(
-                                              left: 48,
-                                              right: 16,
-                                            ),
-                                            title: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(entry.headword),
-                                                ),
-                                                if (entry.hasAudio)
-                                                  IconButton(
-                                                    tooltip:
-                                                        'Play ${entry.headword}',
-                                                    onPressed: () =>
-                                                        _playDictionaryAudio(
-                                                          entry,
-                                                        ),
-                                                    icon: const Icon(
-                                                      Icons.volume_up,
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                            children: [
-                                              ListTile(
-                                                dense: true,
-                                                contentPadding:
-                                                    const EdgeInsets.only(
-                                                      left: 64,
-                                                      right: 16,
-                                                    ),
-                                                title: HtmlWidget(
-                                                  'Grammar: ${entry.grammar}',
-                                                ),
-                                              ),
-                                              ListTile(
-                                                dense: true,
-                                                contentPadding:
-                                                    const EdgeInsets.only(
-                                                      left: 64,
-                                                      right: 16,
-                                                    ),
-                                                title: Text(
-                                                  'IPA: ${entry.ipa}',
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                      ],
-                                    ],
+                                    onSearchError: (error) {
+                                      if (mounted) {
+                                        _setState(
+                                          () => _error =
+                                              'Dictionary search failed: $error',
+                                        );
+                                      }
+                                    },
+                                    playbackPlayer: _playbackPlayer,
+                                    onDownloadError: (error) {
+                                      if (mounted) {
+                                        _setState(
+                                          () => _error =
+                                              'Could not download dictionary audio: $error',
+                                        );
+                                      }
+                                    },
+                                    onPlaybackError: (error) {
+                                      if (mounted) {
+                                        _setState(
+                                          () => _error =
+                                              'Playback failed: $error',
+                                        );
+                                      }
+                                    },
+                                    onExpansionChanged:
+                                        (sentenceIndex, expanded) {
+                                          if (expanded) {
+                                            expandedSentences.add(
+                                              sentenceIndex,
+                                            );
+                                          } else {
+                                            expandedSentences.remove(
+                                              sentenceIndex,
+                                            );
+                                          }
+                                        },
                                   );
                                 },
                               ),
@@ -843,10 +675,6 @@ class _TranscribePageState extends State<TranscribePage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(switch (_viewMode) {
-                    _TextViewMode.reveal =>
-                      '${_comparison.differences.length} difference(s) '
-                          'highlighted. Tap a highlighted section to see the '
-                          'transcript.',
                     _TextViewMode.both =>
                       '${_comparison.differences.length} difference(s): '
                           'original text followed by transcript text.',

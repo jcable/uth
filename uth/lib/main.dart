@@ -10,15 +10,9 @@ class MyApp extends StatefulWidget {
   const MyApp({
     super.key,
     this.documentsDirectoryProvider,
-    this.dictionarySearch,
-    this.dictionaryAudioDownloader,
-    this.dictionaryAudioPlayer,
   });
 
   final Future<Directory> Function()? documentsDirectoryProvider;
-  final DictionarySearch? dictionarySearch;
-  final DictionaryAudioDownloader? dictionaryAudioDownloader;
-  final DictionaryAudioPlayer? dictionaryAudioPlayer;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -43,9 +37,6 @@ class _MyAppState extends State<MyApp> {
     themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
     home: TranscribePage(
       documentsDirectoryProvider: widget.documentsDirectoryProvider,
-      dictionarySearch: widget.dictionarySearch,
-      dictionaryAudioDownloader: widget.dictionaryAudioDownloader,
-      dictionaryAudioPlayer: widget.dictionaryAudioPlayer,
       darkMode: _darkMode,
       onDarkModeChanged: (value) => setState(() => _darkMode = value),
     ),
