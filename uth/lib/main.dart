@@ -9,16 +9,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
 import 'package:record/record.dart';
 
-import 'auth/secrets.dart';
 import 'dictionary_search.dart';
-
-const endpointUrl =
-    'https://jcable--whisper-transcribe-transcriber-transcribe.us-east.modal.run';
+import 'transcription_service.dart';
 
 typedef DictionarySearch = Future<List<GaelicDictionaryEntry>> Function(
   String abairt,
@@ -1007,26 +1003,7 @@ class _TranscribePageState extends State<TranscribePage> {
   }
 
   Future<String> _transcribe(File file) async {
-    final response = await http
-        .post(
-          Uri.parse(endpointUrl),
-          headers: {
-            'Authorization': 'Bearer $apiToken',
-            'Content-Type': 'audio/mp4',
-          },
-          body: await file.readAsBytes(),
-        )
-        .timeout(const Duration(seconds: 180));
-    final body = utf8.decode(response.bodyBytes);
-    if (response.statusCode != 200) {
-      throw Exception('Server error ${response.statusCode}: $body');
-    }
-    final decoded = jsonDecode(body) as Map<String, dynamic>;
-    final result = decoded['text'];
-    if (result is! String) {
-      throw const FormatException('Transcription response has no text field');
-    }
-    return result;
+    return transcribeAudio(file);
   }
 
   void _showDifference(TextDifference difference) {
