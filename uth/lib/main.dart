@@ -15,18 +15,36 @@ import 'package:pretty_diff_text/pretty_diff_text.dart';
 import 'package:record/record.dart';
 
 import 'auth/secrets.dart';
+import 'dictionary_search.dart';
 
 const endpointUrl =
     'https://jcable--whisper-transcribe-transcriber-transcribe.us-east.modal.run';
+
+typedef DictionarySearch = Future<List<GaelicDictionaryEntry>> Function(
+  String abairt,
+);
+typedef DictionaryAudioDownloader = Future<File?> Function(
+  GaelicDictionaryEntry entry,
+);
+typedef DictionaryAudioPlayer = Future<void> Function(File file);
 
 void main() => runApp(const MyApp());
 
 enum _AppMenuAction { settings, about }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key, this.documentsDirectoryProvider});
+  const MyApp({
+    super.key,
+    this.documentsDirectoryProvider,
+    this.dictionarySearch,
+    this.dictionaryAudioDownloader,
+    this.dictionaryAudioPlayer,
+  });
 
   final Future<Directory> Function()? documentsDirectoryProvider;
+  final DictionarySearch? dictionarySearch;
+  final DictionaryAudioDownloader? dictionaryAudioDownloader;
+  final DictionaryAudioPlayer? dictionaryAudioPlayer;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -51,6 +69,9 @@ class _MyAppState extends State<MyApp> {
     themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
     home: TranscribePage(
       documentsDirectoryProvider: widget.documentsDirectoryProvider,
+      dictionarySearch: widget.dictionarySearch,
+      dictionaryAudioDownloader: widget.dictionaryAudioDownloader,
+      dictionaryAudioPlayer: widget.dictionaryAudioPlayer,
       darkMode: _darkMode,
       onDarkModeChanged: (value) => setState(() => _darkMode = value),
     ),
@@ -601,11 +622,17 @@ class TranscribePage extends StatefulWidget {
   const TranscribePage({
     super.key,
     this.documentsDirectoryProvider,
+    this.dictionarySearch,
+    this.dictionaryAudioDownloader,
+    this.dictionaryAudioPlayer,
     required this.darkMode,
     required this.onDarkModeChanged,
   });
 
   final Future<Directory> Function()? documentsDirectoryProvider;
+  final DictionarySearch? dictionarySearch;
+  final DictionaryAudioDownloader? dictionaryAudioDownloader;
+  final DictionaryAudioPlayer? dictionaryAudioPlayer;
   final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
 
@@ -631,6 +658,9 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _transcribing = false;
   _TextViewMode _viewMode = _TextViewMode.reveal;
   final Map<String, Set<int>> _expandedSentences = {};
+  final Map<String, List<GaelicDictionaryEntry>> _dictionaryEntries = {};
+  final Set<String> _dictionaryLoading = {};
+  final Map<int, Future<File?>> _dictionaryAudioDownloads = {};
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
@@ -842,19 +872,83 @@ class _TranscribePageState extends State<TranscribePage> {
     if (path == null) return;
 
     try {
-      final player = _player ??= AudioPlayer();
-      _playerStateSubscription ??= player.onPlayerStateChanged.listen(
-        (state) {
-          if (mounted) setState(() => _playing = state == PlayerState.playing);
-        },
-        onError: (Object error) {
-          if (mounted) setState(() => _error = 'Playback failed: $error');
-        },
-      );
+      final player = _playbackPlayer();
       if (_playing) {
         await player.pause();
       } else {
         await player.play(DeviceFileSource(path));
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = 'Playback failed: $error');
+    }
+  }
+
+  AudioPlayer _playbackPlayer() {
+    final player = _player ??= AudioPlayer();
+    _playerStateSubscription ??= player.onPlayerStateChanged.listen(
+      (state) {
+        if (mounted) setState(() => _playing = state == PlayerState.playing);
+      },
+      onError: (Object error) {
+        if (mounted) setState(() => _error = 'Playback failed: $error');
+      },
+    );
+    return player;
+  }
+
+  Future<void> _searchDictionary(String word) async {
+    setState(() {
+      _dictionaryLoading.add(word);
+      _dictionaryEntries.remove(word);
+      _error = null;
+    });
+
+    try {
+      final entries =
+          await (widget.dictionarySearch?.call(word) ??
+              searchGaelicDictionary(abairt: word));
+      if (!mounted) return;
+      setState(() => _dictionaryEntries[word] = entries);
+      for (final entry in entries.where((entry) => entry.hasAudio)) {
+        unawaited(_downloadDictionaryAudio(entry));
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = 'Dictionary search failed: $error');
+      }
+    } finally {
+      if (mounted) setState(() => _dictionaryLoading.remove(word));
+    }
+  }
+
+  Future<File?> _downloadDictionaryAudio(GaelicDictionaryEntry entry) async {
+    final future = _dictionaryAudioDownloads.putIfAbsent(entry.id, () async {
+      try {
+        return await (widget.dictionaryAudioDownloader?.call(entry) ??
+            downloadGaelicDictionaryAudio(entry));
+      } catch (error) {
+        if (mounted) {
+          setState(
+            () => _error = 'Could not download dictionary audio: $error',
+          );
+        }
+        return null;
+      }
+    });
+    final file = await future;
+    if (file == null) _dictionaryAudioDownloads.remove(entry.id);
+    return file;
+  }
+
+  Future<void> _playDictionaryAudio(GaelicDictionaryEntry entry) async {
+    try {
+      final file = await _downloadDictionaryAudio(entry);
+      if (file == null) return;
+      final audioPlayer = widget.dictionaryAudioPlayer;
+      if (audioPlayer != null) {
+        await audioPlayer(file);
+      } else {
+        await _playbackPlayer().play(DeviceFileSource(file.path));
       }
     } catch (error) {
       if (mounted) setState(() => _error = 'Playback failed: $error');
@@ -1194,13 +1288,15 @@ class _TranscribePageState extends State<TranscribePage> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     children: [
-                                      for (final word in words)
+                                      for (final word in words) ...[
                                         ListTile(
                                           dense: true,
                                           contentPadding: const EdgeInsets.only(
                                             left: 32,
                                             right: 16,
                                           ),
+                                          onTap: () =>
+                                              _searchDictionary(word.group(0)!),
                                           title: Text.rich(
                                             TextSpan(
                                               text: word.group(0),
@@ -1222,6 +1318,75 @@ class _TranscribePageState extends State<TranscribePage> {
                                             ),
                                           ),
                                         ),
+                                        if (_dictionaryLoading.contains(
+                                          word.group(0),
+                                        ))
+                                          const ListTile(
+                                            dense: true,
+                                            contentPadding: EdgeInsets.only(
+                                              left: 48,
+                                            ),
+                                            title: LinearProgressIndicator(),
+                                          ),
+                                        for (final entry
+                                            in _dictionaryEntries[word.group(
+                                                  0,
+                                                )] ??
+                                                const <GaelicDictionaryEntry>[])
+                                          ExpansionTile(
+                                            key: PageStorageKey<String>(
+                                              'dictionary-${word.group(0)}-${entry.id}',
+                                            ),
+                                            dense: true,
+                                            tilePadding: const EdgeInsets.only(
+                                              left: 48,
+                                              right: 16,
+                                            ),
+                                            title: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(entry.headword),
+                                                ),
+                                                if (entry.hasAudio)
+                                                  IconButton(
+                                                    tooltip:
+                                                        'Play ${entry.headword}',
+                                                    onPressed: () =>
+                                                        _playDictionaryAudio(
+                                                          entry,
+                                                        ),
+                                                    icon: const Icon(
+                                                      Icons.volume_up,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            children: [
+                                              ListTile(
+                                                dense: true,
+                                                contentPadding:
+                                                    const EdgeInsets.only(
+                                                      left: 64,
+                                                      right: 16,
+                                                    ),
+                                                title: Text(
+                                                  'Grammar: ${entry.grammar}',
+                                                ),
+                                              ),
+                                              ListTile(
+                                                dense: true,
+                                                contentPadding:
+                                                    const EdgeInsets.only(
+                                                      left: 64,
+                                                      right: 16,
+                                                    ),
+                                                title: Text(
+                                                  'IPA: ${entry.ipa}',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                      ],
                                     ],
                                   );
                                 },

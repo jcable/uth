@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uth/dictionary_search.dart';
 import 'package:uth/main.dart';
 
 const original = """
@@ -459,6 +460,77 @@ void main() {
     expect(find.text('several'), findsOneWidget);
   });
 
+  testWidgets('word lookup adds dictionary entries and audio playback', (
+    tester,
+  ) async {
+    final audioFile = File('${documentsDirectory.path}/dictionary.mp3');
+    await tester.runAsync(() => audioFile.writeAsBytes([1, 2, 3]));
+    var searchedWord = '';
+    File? playedFile;
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'dictionary-tree',
+          'name': 'Dictionary tree',
+          'content': 'Fèathach is calm.',
+          'transcript': 'Fèathach is calm.',
+        },
+      ]),
+    );
+    await _pumpApp(
+      tester,
+      documentsDirectory,
+      app: MyApp(
+        documentsDirectoryProvider: () async => documentsDirectory,
+        dictionarySearch: (word) async {
+          searchedWord = word;
+          return [
+            GaelicDictionaryEntry(
+              id: 52971,
+              headword: 'fèathach',
+              source: null,
+              translation: 'calm',
+              grammar: '<i>comp.</i> -aiche',
+              ipa: '/fia.əx/',
+              wordclass: 'bua.',
+              hasAudio: true,
+              audioVersion: 1,
+              votes: 0,
+              gdKeys: null,
+              enKeys: null,
+              commitMessage: null,
+            ),
+          ];
+        },
+        dictionaryAudioDownloader: (_) async => audioFile,
+        dictionaryAudioPlayer: (file) async {
+          playedFile = file;
+        },
+      ),
+    );
+    await tester.tap(find.text('Dictionary tree'));
+    await tester.pump();
+    await tester.tap(find.text('Tree'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fèathach is calm.'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fèathach'));
+    await tester.pumpAndSettle();
+
+    expect(searchedWord, 'Fèathach');
+    expect(find.text('fèathach'), findsOneWidget);
+    await tester.tap(find.text('fèathach'));
+    await tester.pumpAndSettle();
+    expect(find.text('Grammar: <i>comp.</i> -aiche'), findsOneWidget);
+    expect(find.text('IPA: /fia.əx/'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Play fèathach'));
+    await tester.pumpAndSettle();
+    expect(playedFile, audioFile);
+  });
+
   testWidgets('diff view scrolls when the text exceeds its viewport', (
     tester,
   ) async {
@@ -630,9 +702,13 @@ void main() {
   });
 }
 
-Future<void> _pumpApp(WidgetTester tester, Directory documentsDirectory) async {
+Future<void> _pumpApp(
+  WidgetTester tester,
+  Directory documentsDirectory, {
+  MyApp? app,
+}) async {
   await tester.pumpWidget(
-    MyApp(documentsDirectoryProvider: () async => documentsDirectory),
+    app ?? MyApp(documentsDirectoryProvider: () async => documentsDirectory),
   );
   for (
     var attempt = 0;
