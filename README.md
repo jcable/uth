@@ -45,7 +45,7 @@ The user can choose to:
 
 1. play the recording
 2. re-record
-3  submit the recording for transcription.
+3. submit the recording for transcription.
 
 The returned transcript is associated with the current text and saved alongside it.
 
