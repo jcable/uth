@@ -25,7 +25,7 @@ The model is hosted at modal.com.
 
 See also https://www.clarin.ac.uk/eist-gaelic-speech-recognition-tool
 
-# Dictionary 
+## Dictionary 
 
 Words not correctly recognised can be looked up in the LearnGaelic dictionary and where found, the IPA for the word is shown and the audio sample played.
 
