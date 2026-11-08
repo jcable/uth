@@ -124,38 +124,3 @@ class ComparisonTextSpanBuilder {
     _recognizers.clear();
   }
 }
-
-TextSelection? originalSelectionFromDiff(
-  TextSelection selection,
-  List<TextSpan> spans, {
-  required TextStyle addedTextStyle,
-}) {
-  if (selection.isCollapsed) return null;
-
-  final selectionStart = selection.start;
-  final selectionEnd = selection.end;
-  var displayOffset = 0;
-  var originalOffset = 0;
-  int? originalStart;
-  int? originalEnd;
-
-  for (final span in spans) {
-    final segment = span.toPlainText();
-    final displayEnd = displayOffset + segment.length;
-    if (span.style != addedTextStyle) {
-      final overlapStart = selectionStart > displayOffset
-          ? selectionStart
-          : displayOffset;
-      final overlapEnd = selectionEnd < displayEnd ? selectionEnd : displayEnd;
-      if (overlapStart < overlapEnd) {
-        originalStart ??= originalOffset + overlapStart - displayOffset;
-        originalEnd = originalOffset + overlapEnd - displayOffset;
-      }
-      originalOffset += segment.length;
-    }
-    displayOffset = displayEnd;
-  }
-
-  if (originalStart == null || originalEnd == null) return null;
-  return TextSelection(baseOffset: originalStart, extentOffset: originalEnd);
-}

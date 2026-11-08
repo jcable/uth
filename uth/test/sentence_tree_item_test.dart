@@ -4,7 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uth/dictionary_search.dart';
-import 'package:uth/sentence_tree_item.dart';
+import 'package:uth/sentence_tree_view.dart';
 import 'package:uth/text_classes.dart';
 
 const _entry = GaelicDictionaryEntry(

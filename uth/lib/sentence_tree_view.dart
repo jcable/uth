@@ -9,6 +9,67 @@ import 'dictionary_search.dart';
 import 'text_classes.dart';
 import 'text_spans.dart';
 
+class SentenceTreeView extends StatelessWidget {
+  const SentenceTreeView({
+    super.key,
+    required this.textId,
+    required this.originalText,
+    required this.comparison,
+    required this.originalHighlightColor,
+    required this.expandedSentences,
+    required this.dictionarySearch,
+    required this.onSearchStarted,
+    required this.onSearchError,
+    required this.playbackPlayer,
+    required this.onDownloadError,
+    required this.onPlaybackError,
+    required this.onExpansionChanged,
+  });
+
+  final String textId;
+  final String originalText;
+  final TextComparison comparison;
+  final Color originalHighlightColor;
+  final Set<int> expandedSentences;
+  final DictionarySearch? dictionarySearch;
+  final VoidCallback onSearchStarted;
+  final void Function(Object error) onSearchError;
+  final AudioPlayer Function() playbackPlayer;
+  final void Function(Object error) onDownloadError;
+  final void Function(Object error) onPlaybackError;
+  final void Function(int index, bool expanded) onExpansionChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final sentences = sentencesFromText(originalText);
+    return DefaultTextStyle(
+      style:
+          Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.7) ??
+          const TextStyle(height: 1.7),
+      child: ListView.builder(
+        key: PageStorageKey<String>('sentence-tree-$textId'),
+        itemCount: sentences.length,
+        itemBuilder: (context, index) => SentenceTreeItem(
+          textId: textId,
+          index: index,
+          sentence: sentences[index],
+          originalText: originalText,
+          comparison: comparison,
+          originalHighlightColor: originalHighlightColor,
+          expandedSentences: expandedSentences,
+          dictionarySearch: dictionarySearch,
+          onSearchStarted: onSearchStarted,
+          onSearchError: onSearchError,
+          playbackPlayer: playbackPlayer,
+          onDownloadError: onDownloadError,
+          onPlaybackError: onPlaybackError,
+          onExpansionChanged: onExpansionChanged,
+        ),
+      ),
+    );
+  }
+}
+
 List<Widget> buildSentenceTreeChildren({
   required String text,
   required int start,
