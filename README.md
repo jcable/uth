@@ -4,7 +4,7 @@ Uth helps you practice reading aloud and get an indication of how understandable
 
 ## Development 
 
-Uth was created by Julian Cable. The architecture was suggested by Claude AI and Claude created the code for the API server and the initial Android app.
+Uth was created by Julian Cable for use with Scottish Gaelic. The architecture was suggested by Claude AI and Claude created the code for the API server and the initial Android app.
 
 Further coding used Github Copilot. Copilot selected ChatGPT as the engine on most occasions.
 
