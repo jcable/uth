@@ -5,7 +5,6 @@ import 'package:archive/archive.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:uth/dictionary_search.dart';
 import 'package:uth/main.dart';
 import 'package:uth/text_classes.dart';
 import 'package:uth/text_spans.dart';
@@ -282,8 +281,7 @@ void main() {
 
     await tester.tap(find.text('Dark comparison'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Both'));
-    await tester.pumpAndSettle();
+    expect(find.text('Show transcript'), findsOneWidget);
 
     final spans = tester
         .widget<SelectableText>(find.byType(SelectableText))
@@ -319,9 +317,7 @@ void main() {
     await tester.tap(find.text('Comparison'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Both'));
-    await tester.pump();
-
+    expect(find.text('Show transcript'), findsOneWidget);
     var selectable = tester.widget<SelectableText>(find.byType(SelectableText));
     final spans = selectable.textSpan!.children!.whereType<TextSpan>().toList();
     expect(
@@ -353,257 +349,27 @@ void main() {
     await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Diff'));
+    await tester.tap(find.byType(Switch));
     await tester.pump();
     selectable = tester.widget<SelectableText>(find.byType(SelectableText));
-    final diffSpans = selectable.textSpan!.children!.whereType<TextSpan>();
+    final hiddenSpans = selectable.textSpan!.children!
+        .whereType<TextSpan>()
+        .toList();
     expect(
-      diffSpans.map((span) => span.toPlainText()).join(),
-      'We likove green apples.',
+      hiddenSpans.map((span) => span.toPlainText()).join(),
+      'We like green apples.',
     );
+    expect(hiddenSpans.any((span) => span.text == 'love'), isFalse);
     expect(
-      diffSpans.any(
-        (span) =>
-            span.text == 'ik' &&
-            span.style?.backgroundColor == Colors.green.shade100,
-      ),
-      isTrue,
+      hiddenSpans.singleWhere((span) => span.text == 'like').style?.decoration,
+      TextDecoration.underline,
     );
-    expect(
-      diffSpans.any(
-        (span) =>
-            span.text == 'ov' &&
-            span.style?.backgroundColor == Colors.red.shade100,
-      ),
-      isTrue,
-    );
-
-    var displayOffset = 0;
-    int? addedStart;
-    int? addedEnd;
-    int? deletedStart;
-    int? deletedEnd;
-    for (final span in diffSpans) {
-      final end = displayOffset + span.toPlainText().length;
-      if (span.style?.backgroundColor == Colors.red.shade100) {
-        addedStart = displayOffset;
-        addedEnd = end;
-      } else if (span.style?.backgroundColor == Colors.green.shade100) {
-        deletedStart = displayOffset;
-        deletedEnd = end;
-      }
-      displayOffset = end;
-    }
     selectable.onSelectionChanged!(
-      TextSelection(baseOffset: addedStart!, extentOffset: addedEnd!),
-      SelectionChangedCause.longPress,
-    );
-    await tester.pump();
-    expect(find.text('Re-record'), findsOneWidget);
-
-    selectable = tester.widget<SelectableText>(find.byType(SelectableText));
-    selectable.onSelectionChanged!(
-      TextSelection(baseOffset: deletedStart!, extentOffset: deletedEnd!),
+      const TextSelection(baseOffset: 4, extentOffset: 6),
       SelectionChangedCause.longPress,
     );
     await tester.pump();
     expect(find.text('Record selected'), findsOneWidget);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('tree view nests original words under sentences', (tester) async {
-    tester.view.physicalSize = const Size(800, 1600);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await _writeSavedTexts(
-      tester,
-      documentsDirectory,
-      jsonEncode([
-        {
-          'id': 'tree',
-          'name': 'Comparison',
-          'content': 'We like green apples. Another sentence follows.',
-          'transcript': 'We love green apples.',
-        },
-      ]),
-    );
-    await _pumpApp(tester, documentsDirectory);
-    await tester.tap(find.text('Comparison'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Tree'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(ExpansionTile), findsNWidgets(2));
-    expect(find.byType(ListTile), findsNWidgets(2));
-    expect(find.text('We like green apples.'), findsOneWidget);
-    expect(find.text('Another sentence follows.'), findsOneWidget);
-    expect(find.text('love'), findsNothing);
-
-    await tester.tap(find.text('We like green apples.'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ListTile), findsNWidgets(6));
-    expect(find.text('We'), findsOneWidget);
-    expect(find.text('love'), findsNothing);
-  });
-
-  testWidgets('tree expansion state survives scrolling', (tester) async {
-    tester.view.physicalSize = const Size(800, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final sentences = List.generate(
-      30,
-      (index) => 'Sentence $index has several words.',
-    );
-    final content = sentences.join(' ');
-    await _writeSavedTexts(
-      tester,
-      documentsDirectory,
-      jsonEncode([
-        {
-          'id': 'scroll-tree',
-          'name': 'Scrollable tree',
-          'content': content,
-          'transcript': content,
-        },
-      ]),
-    );
-    await _pumpApp(tester, documentsDirectory);
-    await tester.tap(find.text('Scrollable tree'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Tree'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Sentence 0 has several words.'));
-    await tester.pumpAndSettle();
-    expect(find.text('several'), findsOneWidget);
-
-    await tester.drag(find.byType(ListView), const Offset(0, -1800));
-    await tester.pumpAndSettle();
-    expect(find.text('Sentence 20 has several words.'), findsOneWidget);
-
-    await tester.drag(find.byType(ListView), const Offset(0, 1800));
-    await tester.pumpAndSettle();
-    expect(find.text('several'), findsOneWidget);
-  });
-
-  testWidgets('word lookup adds dictionary entries and audio controls', (
-    tester,
-  ) async {
-    var searchedWord = '';
-    await _writeSavedTexts(
-      tester,
-      documentsDirectory,
-      jsonEncode([
-        {
-          'id': 'dictionary-tree',
-          'name': 'Dictionary tree',
-          'content': 'Fèathach is calm.',
-          'transcript': 'Fèathach is calm.',
-        },
-      ]),
-    );
-    await _pumpApp(
-      tester,
-      documentsDirectory,
-      app: MaterialApp(
-        home: TranscribePage(
-          documentsDirectoryProvider: () async => documentsDirectory,
-          dictionarySearch: (word) async {
-            searchedWord = word;
-            return [
-              GaelicDictionaryEntry(
-                id: 52971,
-                headword: 'fèathach',
-                source: null,
-                translation: 'calm',
-                grammar: '<i>comp.</i> -aiche',
-                ipa: '/fia.əx/',
-                wordclass: 'bua.',
-                hasAudio: true,
-                audioVersion: 1,
-                votes: 0,
-                gdKeys: null,
-                enKeys: null,
-                commitMessage: null,
-              ),
-            ];
-          },
-          darkMode: false,
-          onDarkModeChanged: (_) {},
-        ),
-      ),
-    );
-    await tester.tap(find.text('Dictionary tree'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Tree'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Fèathach is calm.'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Fèathach'));
-    await tester.pumpAndSettle();
-
-    expect(searchedWord, 'Fèathach');
-    expect(find.text('fèathach'), findsOneWidget);
-    await tester.tap(find.text('fèathach'));
-    await tester.pumpAndSettle();
-    final grammar = tester
-        .widgetList<RichText>(find.byType(RichText))
-        .singleWhere(
-          (widget) => widget.text.toPlainText() == 'Grammar: comp. -aiche',
-        )
-        .text;
-    bool hasItalicComp(InlineSpan span) =>
-        span is TextSpan &&
-        ((span.text == 'comp.' && span.style?.fontStyle == FontStyle.italic) ||
-            (span.children?.any(hasItalicComp) ?? false));
-    expect(grammar.toPlainText(), 'Grammar: comp. -aiche');
-    expect(hasItalicComp(grammar), isTrue);
-    expect(find.text('IPA: /fia.əx/'), findsOneWidget);
-
-    expect(find.byTooltip('Play fèathach'), findsOneWidget);
-  });
-
-  testWidgets('diff view scrolls when the text exceeds its viewport', (
-    tester,
-  ) async {
-    final original = List.filled(240, 'original').join(' ');
-    final transcript = original.replaceFirst('original', 'updated');
-    await _writeSavedTexts(
-      tester,
-      documentsDirectory,
-      jsonEncode([
-        {
-          'id': 'long-comparison',
-          'name': 'Long comparison',
-          'content': original,
-          'transcript': transcript,
-        },
-      ]),
-    );
-    await _pumpApp(tester, documentsDirectory);
-    await tester.tap(find.text('Long comparison'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Diff'));
-    await tester.pump();
-
-    final selectableFinder = find.byType(SelectableText);
-    expect(selectableFinder, findsOneWidget);
-    final scrollableFinder = find.descendant(
-      of: selectableFinder,
-      matching: find.byType(Scrollable),
-    );
-    expect(scrollableFinder, findsOneWidget);
-    expect(
-      tester.state<ScrollableState>(scrollableFinder).position.maxScrollExtent,
-      greaterThan(0),
-    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();

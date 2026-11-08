@@ -7,7 +7,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'comparison_text_view.dart';
-import 'pretty_diff_view.dart';
 import 'sentence_tree_view.dart';
 
 import 'package:path_provider/path_provider.dart';
@@ -18,8 +17,6 @@ import 'saved_text_page.dart';
 import 'saved_texts_page.dart';
 import 'text_classes.dart';
 import 'transcription_service.dart';
-
-enum _TextViewMode { both, tree, prettyDiff }
 
 class _TextEditorDialog extends StatefulWidget {
   const _TextEditorDialog({required this.existing});
@@ -134,8 +131,7 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _recording = false;
   bool _playing = false;
   bool _transcribing = false;
-  _TextViewMode _viewMode = _TextViewMode.both;
-  final Map<String, Set<int>> _expandedSentences = {};
+  bool _showTranscript = true;
   final ValueNotifier<int> _detailPageRevision = ValueNotifier<int>(0);
 
   void _setState(VoidCallback callback) {
@@ -254,9 +250,7 @@ class _TranscribePageState extends State<TranscribePage> {
         content: draft.content,
       );
       _setState(() {
-        if (existing.content != updated.content) {
-          _expandedSentences.remove(existing.id);
-        }
+        if (existing.content != updated.content) {}
         _texts = _texts
             .map((text) => text.id == existing.id ? updated : text)
             .toList();
@@ -311,7 +305,6 @@ class _TranscribePageState extends State<TranscribePage> {
     );
     if (confirmed != true || !mounted) return;
     _setState(() {
-      _expandedSentences.remove(text.id);
       _texts = _texts.where((item) => item.id != text.id).toList();
       if (_selectedId == text.id) _selectedId = null;
     });
@@ -474,10 +467,6 @@ class _TranscribePageState extends State<TranscribePage> {
   }
 
   Widget _buildTextView(SavedText text) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final originalHighlightColor = isDarkMode
-        ? Colors.green.shade900
-        : Colors.green.shade100;
     final isRecordingSelection = _selection != null && !_selection!.isCollapsed;
     const verticalPadding = 12.0;
     const buttonPadding = EdgeInsets.fromLTRB(12, 12, 12, 48);
@@ -486,7 +475,6 @@ class _TranscribePageState extends State<TranscribePage> {
         : isRecordingSelection
         ? 'Record selected'
         : 'Re-record';
-    final isPrettyDiff = _viewMode == _TextViewMode.prettyDiff;
     return SavedTextPage(
       text: text,
       onBack: () => Navigator.of(context).pop(),
@@ -498,24 +486,13 @@ class _TranscribePageState extends State<TranscribePage> {
               if (text.transcript.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: SegmentedButton<_TextViewMode>(
-                    segments: const [
-                      ButtonSegment(
-                        value: _TextViewMode.both,
-                        label: Text('Both'),
-                      ),
-                      ButtonSegment(
-                        value: _TextViewMode.tree,
-                        label: Text('Tree'),
-                      ),
-                      ButtonSegment(
-                        value: _TextViewMode.prettyDiff,
-                        label: Text('Diff'),
-                      ),
-                    ],
-                    selected: {_viewMode},
-                    onSelectionChanged: (selection) {
-                      _setState(() => _viewMode = selection.first);
+                  child: SwitchListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    title: const Text('Show transcript'),
+                    value: _showTranscript,
+                    onChanged: (showTranscript) {
+                      _setState(() => _showTranscript = showTranscript);
                     },
                   ),
                 ),
@@ -536,90 +513,28 @@ class _TranscribePageState extends State<TranscribePage> {
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: isPrettyDiff
-                          ? PrettyDiffView(
-                              oldText: text.content,
-                              newText: text.transcript,
-                              onSelectionChanged: (selection) {
-                                _setState(() => _selection = selection);
-                              },
-                            )
-                          : _viewMode == _TextViewMode.tree
-                          ? SentenceTreeView(
-                              textId: text.id,
-                              originalText: text.content,
-                              comparison: _comparison,
-                              originalHighlightColor: originalHighlightColor,
-                              expandedSentences: _expandedSentences.putIfAbsent(
-                                text.id,
-                                () => <int>{},
-                              ),
-                              dictionarySearch: widget.dictionarySearch,
-                              onSearchStarted: () {
-                                if (mounted) _setState(() => _error = null);
-                              },
-                              onSearchError: (error) {
-                                if (mounted) {
-                                  _setState(
-                                    () => _error =
-                                        'Dictionary search failed: $error',
-                                  );
-                                }
-                              },
-                              playbackPlayer: _playbackPlayer,
-                              onDownloadError: (error) {
-                                if (mounted) {
-                                  _setState(
-                                    () => _error =
-                                        'Could not download dictionary audio: $error',
-                                  );
-                                }
-                              },
-                              onPlaybackError: (error) {
-                                if (mounted) {
-                                  _setState(
-                                    () => _error = 'Playback failed: $error',
-                                  );
-                                }
-                              },
-                              onExpansionChanged: (sentenceIndex, expanded) {
-                                final expandedSentences = _expandedSentences
-                                    .putIfAbsent(text.id, () => <int>{});
-                                if (expanded) {
-                                  expandedSentences.add(sentenceIndex);
-                                } else {
-                                  expandedSentences.remove(sentenceIndex);
-                                }
-                              },
-                            )
-                          : ComparisonTextView(
-                              originalText: text.content,
-                              comparison: _comparison,
-                              onDifferenceTap: (difference) =>
-                                  _showDifference(difference, text.content),
-                              onSelectionChanged: (selection) {
-                                _setState(() => _selection = selection);
-                              },
-                            ),
+                      child: ComparisonTextView(
+                        originalText: text.content,
+                        comparison: _comparison,
+                        onDifferenceTap: (difference) =>
+                            _showDifference(difference, text.content),
+                        onSelectionChanged: (selection) {
+                          _setState(() => _selection = selection);
+                        },
+                        showTranscript: _showTranscript,
+                      ),
                     ),
                   ),
                 ),
               ),
-              if (_comparison.differences.isNotEmpty ||
-                  _viewMode == _TextViewMode.prettyDiff)
+              if (_comparison.differences.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(switch (_viewMode) {
-                    _TextViewMode.both =>
-                      '${_comparison.differences.length} difference(s): '
-                          'original text followed by transcript text.',
-                    _TextViewMode.tree =>
-                      '${_comparison.differences.length} difference(s): '
-                          'sentences grouped by word.',
-                    _TextViewMode.prettyDiff =>
-                      'Original-only text and transcript-only text are '
-                          'highlighted.',
-                  }, style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(
+                    '${_comparison.differences.length} difference(s): '
+                    '${_showTranscript ? 'original text followed by transcript text.' : 'transcript text hidden.'}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
               if (_error != null)
                 Padding(
