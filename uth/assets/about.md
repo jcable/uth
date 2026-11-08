@@ -14,3 +14,5 @@ The model can be found at https://huggingface.co/eist-edinburgh/whisper-large-v3
 The model is hosted at modal.com.
 
 See also https://www.clarin.ac.uk/eist-gaelic-speech-recognition-tool
+
+The sound samples and IPA spellings are provided by searching the LearnGaelic dictionary using an undocumented public API which returns a JSON response. The results returned are the same as the normal access at https://learngaelic.scot/dictionary/. 
