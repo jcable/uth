@@ -452,14 +452,11 @@ class _TranscribePageState extends State<TranscribePage> {
     return transcribeAudio(file);
   }
 
-  void _showDifference(TextDifference difference, String original) {
-    final differenceText = difference.transcript.isNotEmpty
-        ? difference.transcript
-        : original.substring(difference.start, difference.end);
+  void _showDetail(TextDifference difference, String original) {
     showDialog<void>(
       context: context,
       builder: (context) => SentenceTreeChildrenDialog(
-        text: differenceText,
+        text: original.substring(difference.start, difference.end),
         dictionarySearch: widget.dictionarySearch,
         playbackPlayer: _playbackPlayer,
       ),
@@ -517,7 +514,7 @@ class _TranscribePageState extends State<TranscribePage> {
                         originalText: text.content,
                         comparison: _comparison,
                         onDifferenceTap: (difference) =>
-                            _showDifference(difference, text.content),
+                            _showDetail(difference, text.content),
                         onSelectionChanged: (selection) {
                           _setState(() => _selection = selection);
                         },

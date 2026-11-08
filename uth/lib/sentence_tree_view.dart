@@ -256,18 +256,14 @@ class _SentenceTreeChildrenDialogState
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Transcript difference'),
+    title: widget.text.isNotEmpty ? Text(widget.text) : const Text('No children'),
     content: SizedBox(
       width: 520,
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (widget.text.isEmpty)
-              const Text('No matching words were recognized for this section.')
-            else
-              ...buildSentenceTreeChildren(
+          children: buildSentenceTreeChildren(
                 text: widget.text,
                 start: 0,
                 comparison: const TextComparison([]),
@@ -281,15 +277,6 @@ class _SentenceTreeChildrenDialogState
                   unawaited(_playDictionaryAudio(entry));
                 },
               ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-          ],
         ),
       ),
     ),

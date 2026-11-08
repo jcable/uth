@@ -335,20 +335,6 @@ void main() {
     );
     expect(spans.last.style?.backgroundColor, isNull);
 
-    (spans.singleWhere((span) => span.text == 'like').recognizer!
-            as TapGestureRecognizer)
-        .onTap!();
-    await tester.pumpAndSettle();
-    expect(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.text('love'),
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Close'));
-    await tester.pumpAndSettle();
-
     await tester.tap(find.byType(Switch));
     await tester.pump();
     selectable = tester.widget<SelectableText>(find.byType(SelectableText));
@@ -373,6 +359,45 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+  });
+
+  testWidgets('tapping a difference opens its detail popup', (tester) async {
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'difference-detail',
+          'name': 'Difference detail',
+          'content': 'We like green apples.',
+          'transcript': 'We love green apples.',
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+    await tester.tap(find.text('Difference detail'));
+    await tester.pumpAndSettle();
+
+    final spans = tester
+        .widget<SelectableText>(find.byType(SelectableText))
+        .textSpan!
+        .children!
+        .whereType<TextSpan>();
+    (spans.singleWhere((span) => span.text == 'like').recognizer!
+            as TapGestureRecognizer)
+        .onTap!();
+    await tester.pumpAndSettle();
+
+    final popup = find.byType(AlertDialog);
+    expect(popup, findsOneWidget);
+    expect(
+      find.descendant(of: popup, matching: find.text('like')),
+      findsWidgets,
+    );
+    expect(
+      find.descendant(of: popup, matching: find.text('Close')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('load errors can be dismissed', (tester) async {
