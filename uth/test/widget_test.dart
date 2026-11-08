@@ -117,8 +117,6 @@ void main() {
       original: original,
       comparison: compareText(original, transcript),
       showTranscript: false,
-      revealColor: Colors.transparent,
-      revealUnderlineColor: Colors.black,
       originalHighlightColor: Colors.green,
       transcriptHighlightColor: Colors.red,
     );
@@ -346,10 +344,7 @@ void main() {
       'We like green apples.',
     );
     expect(hiddenSpans.any((span) => span.text == 'love'), isFalse);
-    expect(
-      hiddenSpans.singleWhere((span) => span.text == 'like').style?.decoration,
-      TextDecoration.underline,
-    );
+    expect(hiddenSpans.singleWhere((span) => span.text == 'like'), isNotNull);
     selectable.onSelectionChanged!(
       const TextSelection(baseOffset: 4, extentOffset: 6),
       SelectionChangedCause.longPress,

@@ -43,8 +43,6 @@ class ComparisonTextSpanBuilder {
     required String original,
     required TextComparison comparison,
     required bool showTranscript,
-    required Color revealColor,
-    required Color revealUnderlineColor,
     required Color originalHighlightColor,
     required Color transcriptHighlightColor,
     void Function(TextDifference)? onDifferenceTap,
@@ -73,32 +71,18 @@ class ComparisonTextSpanBuilder {
         recognizer = _recognizers[recognizerIndex++]
           ..onTap = () => onDifferenceTap(difference);
       }
-      if (showTranscript) {
+      spans.add(
+        TextSpan(
+          text: originalSegment,
+          style: TextStyle(backgroundColor: originalHighlightColor),
+          recognizer: recognizer,
+        ),
+      );
+      if (showTranscript && difference.transcript.isNotEmpty) {
         spans.add(
           TextSpan(
-            text: originalSegment,
-            style: TextStyle(backgroundColor: originalHighlightColor),
-            recognizer: recognizer,
-          ),
-        );
-        if (difference.transcript.isNotEmpty) {
-          spans.add(
-            TextSpan(
-              text: difference.transcript,
-              style: TextStyle(backgroundColor: transcriptHighlightColor),
-              recognizer: recognizer,
-            ),
-          );
-        }
-      } else {
-        spans.add(
-          TextSpan(
-            text: originalSegment,
-            style: TextStyle(
-              backgroundColor: revealColor,
-              decoration: TextDecoration.underline,
-              decorationColor: revealUnderlineColor,
-            ),
+            text: difference.transcript,
+            style: TextStyle(backgroundColor: transcriptHighlightColor),
             recognizer: recognizer,
           ),
         );

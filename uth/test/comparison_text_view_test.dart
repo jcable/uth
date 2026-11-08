@@ -157,11 +157,9 @@ void main() {
         .toList();
     expect(spans.map((span) => span.toPlainText()).join(), 'We like apples.');
 
-    final revealedOriginal = spans.singleWhere((span) => span.text == 'like');
     expect(
-      revealedOriginal.style?.backgroundColor,
-      ThemeData.light().colorScheme.errorContainer,
+      spans.singleWhere((span) => span.text == 'like').style?.backgroundColor,
+      Colors.green.shade100,
     );
-    expect(revealedOriginal.style?.decoration, TextDecoration.underline);
   });
 }

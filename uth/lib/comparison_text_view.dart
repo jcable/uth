@@ -48,8 +48,6 @@ class _ComparisonTextViewState extends State<ComparisonTextView> {
       original: widget.originalText,
       comparison: widget.comparison,
       showTranscript: widget.showTranscript,
-      revealColor: Theme.of(context).colorScheme.errorContainer,
-      revealUnderlineColor: Theme.of(context).colorScheme.error,
       originalHighlightColor: originalHighlightColor,
       transcriptHighlightColor: transcriptHighlightColor,
       onDifferenceTap: widget.onDifferenceTap,
