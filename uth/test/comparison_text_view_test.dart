@@ -61,6 +61,42 @@ void main() {
     expect(selectedText, isNull);
   });
 
+  testWidgets('maps selection end past transcript spans to original text', (
+    tester,
+  ) async {
+    TextSelection? selectedText;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ComparisonTextView(
+            originalText: 'a b c d',
+            comparison: const TextComparison([
+              TextDifference(start: 2, end: 3, transcript: 'bee'),
+              TextDifference(start: 6, end: 7, transcript: 'dee'),
+            ]),
+            onDifferenceTap: (_) {},
+            onSelectionChanged: (value) => selectedText = value,
+            showTranscript: true,
+          ),
+        ),
+      ),
+    );
+
+    final selectable = tester.widget<SelectableText>(
+      find.byType(SelectableText),
+    );
+    final displayedText = selectable.textSpan!.toPlainText();
+    selectable.onSelectionChanged!(
+      TextSelection(
+        baseOffset: displayedText.indexOf('b'),
+        extentOffset: displayedText.length,
+      ),
+      SelectionChangedCause.longPress,
+    );
+
+    expect(selectedText, const TextSelection(baseOffset: 2, extentOffset: 7));
+  });
+
   testWidgets('uses darker difference highlights in dark mode', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

@@ -25,6 +25,8 @@ class ComparisonTextView extends StatefulWidget {
 
 class _ComparisonTextViewState extends State<ComparisonTextView> {
   final _spanBuilder = ComparisonTextSpanBuilder();
+  Color? _transcriptHighlightColor;
+  List<TextSpan> _displaySpans = const [];
 
   @override
   void dispose() {
@@ -41,6 +43,7 @@ class _ComparisonTextViewState extends State<ComparisonTextView> {
     final transcriptHighlightColor = isDarkMode
         ? Colors.red.shade900
         : Colors.red.shade100;
+    _transcriptHighlightColor = transcriptHighlightColor;
     final spans = _spanBuilder.build(
       original: widget.originalText,
       comparison: widget.comparison,
@@ -51,6 +54,7 @@ class _ComparisonTextViewState extends State<ComparisonTextView> {
       transcriptHighlightColor: transcriptHighlightColor,
       onDifferenceTap: widget.onDifferenceTap,
     );
+    _displaySpans = spans;
 
     return SelectableText.rich(
       TextSpan(
@@ -58,8 +62,43 @@ class _ComparisonTextViewState extends State<ComparisonTextView> {
         children: spans,
       ),
       onSelectionChanged: (selection, _) {
-        widget.onSelectionChanged(selection.isCollapsed ? null : selection);
+        widget.onSelectionChanged(_originalSelectionFromDisplay(selection));
       },
     );
+  }
+
+  TextSelection? _originalSelectionFromDisplay(TextSelection selection) {
+    if (selection.isCollapsed || widget.originalText.isEmpty) return null;
+
+    final baseOffset = _originalOffsetFromDisplay(selection.baseOffset);
+    final extentOffset = _originalOffsetFromDisplay(selection.extentOffset);
+    if (baseOffset == extentOffset) return null;
+    return TextSelection(baseOffset: baseOffset, extentOffset: extentOffset);
+  }
+
+  int _originalOffsetFromDisplay(int displayOffset) {
+    final transcriptHighlightColor = _transcriptHighlightColor;
+    if (transcriptHighlightColor == null) return displayOffset;
+
+    var displayCursor = 0;
+    var transcriptLength = 0;
+    for (final span in _displaySpans) {
+      final segment = span.toPlainText();
+      final displayEnd = displayCursor + segment.length;
+      final isTranscript =
+          span.style?.backgroundColor == transcriptHighlightColor;
+      if (displayOffset <= displayEnd) {
+        if (isTranscript) {
+          transcriptLength += (displayOffset - displayCursor)
+              .clamp(0, segment.length)
+              .toInt();
+        }
+        break;
+      }
+      if (isTranscript) transcriptLength += segment.length;
+      displayCursor = displayEnd;
+    }
+
+    return displayOffset - transcriptLength;
   }
 }
