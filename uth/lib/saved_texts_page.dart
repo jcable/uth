@@ -35,7 +35,7 @@ class SavedTextsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('My texts'),
+      title: const Text('Mo sgriobtaichean (My scripts)'),
       actions: [
         PopupMenuButton<_MenuAction>(
           tooltip: 'More options',
