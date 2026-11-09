@@ -42,6 +42,9 @@ class _TranscribePageState extends State<TranscribePage> {
   String? _selectedId;
   String? _pendingAudioPath;
   String? _error;
+  String _comparisonText = '';
+  // Paragraph formatting inserts newlines, so map displayed selections to source offsets.
+  List<int> _comparisonSourceOffsets = const [0];
   TextSelection? _selection;
   TextSelection? _recordingSelection;
   TextComparison _comparison = const TextComparison([]);
@@ -50,6 +53,7 @@ class _TranscribePageState extends State<TranscribePage> {
   bool _playing = false;
   bool _transcribing = false;
   bool _showTranscript = true;
+  bool _splitParagraphs = false;
   final ValueNotifier<int> _detailPageRevision = ValueNotifier<int>(0);
 
   void _setState(VoidCallback callback) {
@@ -64,6 +68,21 @@ class _TranscribePageState extends State<TranscribePage> {
       if (text.id == _selectedId) return text;
     }
     return null;
+  }
+
+  void _updateComparisonText(String content, String transcript) {
+    final formattedText = _formatComparisonText(content, _splitParagraphs);
+    _comparisonText = formattedText.text;
+    _comparisonSourceOffsets = formattedText.sourceOffsets;
+    _comparison = compareText(_comparisonText, transcript);
+  }
+
+  TextSelection? _sourceSelection(TextSelection? selection) {
+    if (selection == null) return null;
+    return TextSelection(
+      baseOffset: _comparisonSourceOffsets[selection.baseOffset],
+      extentOffset: _comparisonSourceOffsets[selection.extentOffset],
+    );
   }
 
   @override
@@ -133,7 +152,7 @@ class _TranscribePageState extends State<TranscribePage> {
           .map((text) => text.id == updated.id ? updated : text)
           .toList();
       if (_selectedId == updated.id) {
-        _comparison = compareText(updated.content, updated.transcript);
+        _updateComparisonText(updated.content, updated.transcript);
         _selection = null;
       }
     });
@@ -146,7 +165,7 @@ class _TranscribePageState extends State<TranscribePage> {
       _selectedId = text?.id;
       if (text != null) {
         _selection = null;
-        _comparison = compareText(text.content, text.transcript);
+        _updateComparisonText(text.content, text.transcript);
       }
     });
   }
@@ -280,7 +299,7 @@ class _TranscribePageState extends State<TranscribePage> {
         _texts = _texts
             .map((item) => item.id == text.id ? updated : item)
             .toList();
-        _comparison = compareText(updated.content, updated.transcript);
+        _updateComparisonText(updated.content, updated.transcript);
         _selection = null;
       });
       await _saveTexts();
@@ -329,19 +348,47 @@ class _TranscribePageState extends State<TranscribePage> {
         children: [
           Column(
             children: [
-              if (text.transcript.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: SwitchListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    title: const Text('Show transcript'),
-                    value: _showTranscript,
-                    onChanged: (showTranscript) {
-                      _setState(() => _showTranscript = showTranscript);
-                    },
-                  ),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    if (text.transcript.isNotEmpty)
+                      Expanded(
+                        child: SwitchListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                          ),
+                          title: const Text('Show transcript'),
+                          value: _showTranscript,
+                          onChanged: (showTranscript) {
+                            _setState(() => _showTranscript = showTranscript);
+                          },
+                        ),
+                      ),
+                    Expanded(
+                      child: SwitchListTile(
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        title: const Text('One sentence per paragraph'),
+                        value: _splitParagraphs,
+                        onChanged: (splitParagraphs) {
+                          _setState(() {
+                            _splitParagraphs = splitParagraphs;
+                            _updateComparisonText(
+                              text.content,
+                              text.transcript,
+                            );
+                            _selection = null;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
+              ),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) => SingleChildScrollView(
@@ -360,12 +407,14 @@ class _TranscribePageState extends State<TranscribePage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ComparisonTextView(
-                        originalText: text.content,
+                        originalText: _comparisonText,
                         comparison: _comparison,
                         onDifferenceTap: (difference) =>
-                            _showDetail(difference, text.content),
+                            _showDetail(difference, _comparisonText),
                         onSelectionChanged: (selection) {
-                          _setState(() => _selection = selection);
+                          _setState(
+                            () => _selection = _sourceSelection(selection),
+                          );
                         },
                         showTranscript: _showTranscript,
                       ),
@@ -494,6 +543,65 @@ class _TranscribePageState extends State<TranscribePage> {
       onTextsChanged: _updateTexts,
     );
   }
+}
+
+class _FormattedComparisonText {
+  const _FormattedComparisonText(this.text, this.sourceOffsets);
+
+  final String text;
+  final List<int> sourceOffsets;
+}
+
+_FormattedComparisonText _formatComparisonText(
+  String text,
+  bool splitParagraphs,
+) {
+  if (!splitParagraphs) {
+    return _FormattedComparisonText(
+      text,
+      List<int>.generate(text.length + 1, (index) => index),
+    );
+  }
+
+  final sentences = sentencesFromText(text);
+  if (sentences.length < 2) {
+    return _FormattedComparisonText(
+      text,
+      List<int>.generate(text.length + 1, (index) => index),
+    );
+  }
+
+  final formatted = StringBuffer();
+  final sourceOffsets = <int>[];
+
+  void appendSourceRange(int start, int end) {
+    if (sourceOffsets.isEmpty) {
+      sourceOffsets.add(start);
+    } else {
+      sourceOffsets.last = start;
+    }
+    formatted.write(text.substring(start, end));
+    for (var index = start; index < end; index++) {
+      sourceOffsets.add(index + 1);
+    }
+  }
+
+  appendSourceRange(0, sentences.first.start);
+  for (var index = 0; index < sentences.length; index++) {
+    final sentence = sentences[index];
+    appendSourceRange(sentence.start, sentence.end);
+    if (index < sentences.length - 1) {
+      final nextStart = sentences[index + 1].start;
+      sourceOffsets.last = sentence.end;
+      formatted.write('\n\n');
+      sourceOffsets
+        ..add(sentence.end)
+        ..add(nextStart);
+    }
+  }
+  appendSourceRange(sentences.last.end, text.length);
+
+  return _FormattedComparisonText(formatted.toString(), sourceOffsets);
 }
 
 String replaceTranscriptForSelection(

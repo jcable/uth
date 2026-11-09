@@ -272,7 +272,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(Switch));
+    await tester.tap(find.text('Dark mode'));
     await tester.pumpAndSettle();
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -333,7 +333,7 @@ void main() {
     );
     expect(spans.last.style?.backgroundColor, isNull);
 
-    await tester.tap(find.byType(Switch));
+    await tester.tap(find.text('Show transcript'));
     await tester.pump();
     selectable = tester.widget<SelectableText>(find.byType(SelectableText));
     final hiddenSpans = selectable.textSpan!.children!
@@ -354,6 +354,37 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+  });
+
+  testWidgets('sentence splitting separates original text into paragraphs', (
+    tester,
+  ) async {
+    await _writeSavedTexts(
+      tester,
+      documentsDirectory,
+      jsonEncode([
+        {
+          'id': 'split-sentences',
+          'name': 'Sentences',
+          'content': 'First sentence. Second sentence!',
+          'transcript': 'First sentence. Second sentence!',
+        },
+      ]),
+    );
+    await _pumpApp(tester, documentsDirectory);
+    await tester.tap(find.text('Sentences'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('One sentence per paragraph'));
+    await tester.pumpAndSettle();
+
+    final selectable = tester.widget<SelectableText>(
+      find.byType(SelectableText),
+    );
+    expect(
+      selectable.textSpan!.toPlainText(),
+      'First sentence.\n\nSecond sentence!',
+    );
   });
 
   testWidgets('tapping a difference opens its detail popup', (tester) async {
