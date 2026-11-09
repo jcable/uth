@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'about_page.dart';
 import 'settings_page.dart';
 import 'text_classes.dart';
+import 'text_editor.dart';
 
 enum _MenuAction { settings, about }
 
@@ -19,8 +20,8 @@ class SavedTextsPage extends StatelessWidget {
     required this.darkMode,
     required this.onDarkModeChanged,
     required this.onErrorDismissed,
-    required this.onAdd,
-    required this.onEdit,
+    required this.onAddText,
+    required this.onUpdateText,
     required this.onSelectedTextChanged,
     required this.detailPageRevision,
     required this.textPageBuilder,
@@ -33,8 +34,8 @@ class SavedTextsPage extends StatelessWidget {
   final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onErrorDismissed;
-  final Future<SavedText?> Function() onAdd;
-  final Future<SavedText?> Function(SavedText) onEdit;
+  final Future<void> Function(SavedText) onAddText;
+  final Future<void> Function(SavedText) onUpdateText;
   final ValueChanged<SavedText?> onSelectedTextChanged;
   final ValueListenable<int> detailPageRevision;
   final Widget Function(SavedText) textPageBuilder;
@@ -42,8 +43,32 @@ class SavedTextsPage extends StatelessWidget {
   final Future<void> Function(List<SavedText>) onTextsChanged;
 
   Future<void> _addText(BuildContext context) async {
-    final text = await onAdd();
-    if (text != null && context.mounted) _openText(context, text);
+    final draft = await showDialog<TextDraft>(
+      context: context,
+      builder: (context) => TextEditorDialog(existing: null),
+    );
+    if (draft == null) return;
+    final text = SavedText(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      name: draft.name,
+      content: draft.content,
+    );
+    await onAddText(text);
+    if(context.mounted) _openText(context, text);
+  }
+
+  Future<void> _editText(BuildContext context, SavedText existing) async {
+    final draft = await showDialog<TextDraft>(
+      context: context,
+      builder: (context) => TextEditorDialog(existing: existing),
+    );
+    if (draft == null) return;
+    if (draft.name == existing.name && draft.content == existing.content) return;
+    SavedText updated = existing.copyWith(
+      name: draft.name,
+      content: draft.content,
+    );
+    await onUpdateText(updated);
   }
 
   void _openText(BuildContext context, SavedText text) {
@@ -175,7 +200,7 @@ class SavedTextsPage extends StatelessWidget {
                           IconButton(
                             tooltip: 'Edit ${text.name}',
                             icon: const Icon(Icons.edit),
-                            onPressed: () => onEdit(text),
+                            onPressed: () => _editText(context, text),
                           ),
                           IconButton(
                             tooltip: 'Save ${text.name}',

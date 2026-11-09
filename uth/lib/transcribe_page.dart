@@ -121,43 +121,25 @@ class _TranscribePageState extends State<TranscribePage> {
     }
   }
 
-  Future<SavedText?> _editText({SavedText? existing}) async {
-    final draft = await showDialog<TextDraft>(
-      context: context,
-      builder: (context) => TextEditorDialog(existing: existing),
-    );
-    if (draft == null || !mounted) return null;
-
-    if (existing == null) {
-      final text = SavedText(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        name: draft.name,
-        content: draft.content,
-      );
-      _setState(() {
-        _texts = [..._texts, text];
-      });
-      unawaited(_saveTexts());
-      return text;
-    } else {
-      final updated = existing.copyWith(
-        name: draft.name,
-        content: draft.content,
-      );
-      _setState(() {
-        if (existing.content != updated.content) {}
-        _texts = _texts
-            .map((text) => text.id == existing.id ? updated : text)
-            .toList();
-        _comparison = compareText(updated.content, updated.transcript);
-        _selection = null;
-      });
-    }
+  Future<void> _addText(SavedText text) async {
+    setState(() {
+      _texts = [..._texts, text];
+    });
     await _saveTexts();
-    return null;
   }
 
-  Future<SavedText?> _addText() => _editText();
+  Future<void> _updateText(SavedText updated) async {
+    _setState(() {
+      _texts = _texts
+          .map((text) => text.id == updated.id ? updated : text)
+          .toList();
+      if (_selectedId == updated.id) {
+        _comparison = compareText(updated.content, updated.transcript);
+        _selection = null;
+      }
+    });
+    await _saveTexts();
+  }
 
   void _setSelectedText(SavedText? text) {
     if (!mounted) return;
@@ -504,8 +486,8 @@ class _TranscribePageState extends State<TranscribePage> {
       darkMode: widget.darkMode,
       onDarkModeChanged: widget.onDarkModeChanged,
       onErrorDismissed: () => _setState(() => _error = null),
-      onAdd: _addText,
-      onEdit: (text) => _editText(existing: text),
+      onAddText: _addText,
+      onUpdateText: _updateText,
       onSelectedTextChanged: _setSelectedText,
       detailPageRevision: _detailPageRevision,
       textPageBuilder: (text) => _buildTextView(_selected ?? text),
