@@ -4,6 +4,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+class TextDraft {
+  const TextDraft(this.name, this.content);
+
+  final String name;
+  final String content;
+}
+
 class TextEditorDialog extends StatefulWidget {
   const TextEditorDialog({required this.existing});
 
