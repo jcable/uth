@@ -37,7 +37,7 @@ List<TextSpan> sentenceTextSpans(
 }
 
 class ComparisonTextSpanBuilder {
-  final _recognizers = <TapGestureRecognizer>[];
+  final _recognizers = <LongPressGestureRecognizer>[];
 
   List<TextSpan> build({
     required String original,
@@ -45,7 +45,7 @@ class ComparisonTextSpanBuilder {
     required bool showTranscript,
     required Color originalHighlightColor,
     required Color transcriptHighlightColor,
-    void Function(TextDifference)? onDifferenceTap,
+    void Function(TextDifference)? onShowDetail,
   }) {
     final spans = <TextSpan>[];
     var cursor = 0;
@@ -63,13 +63,14 @@ class ComparisonTextSpanBuilder {
         difference.start,
         difference.end,
       );
-      TapGestureRecognizer? recognizer;
-      if (onDifferenceTap != null) {
+      LongPressGestureRecognizer? recognizer;
+      if (onShowDetail != null) {
         if (_recognizers.length == recognizerIndex) {
-          _recognizers.add(TapGestureRecognizer());
+          _recognizers.add(LongPressGestureRecognizer());
         }
+        // Keep detail activation separate from double/triple-tap selection.
         recognizer = _recognizers[recognizerIndex++]
-          ..onTap = () => onDifferenceTap(difference);
+          ..onLongPress = () => onShowDetail(difference);
       }
       spans.add(
         TextSpan(

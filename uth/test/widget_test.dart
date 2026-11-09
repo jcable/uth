@@ -387,7 +387,9 @@ void main() {
     );
   });
 
-  testWidgets('tapping a difference opens its detail popup', (tester) async {
+  testWidgets('long pressing a difference opens its detail popup', (
+    tester,
+  ) async {
     await _writeSavedTexts(
       tester,
       documentsDirectory,
@@ -410,8 +412,8 @@ void main() {
         .children!
         .whereType<TextSpan>();
     (spans.singleWhere((span) => span.text == 'like').recognizer!
-            as TapGestureRecognizer)
-        .onTap!();
+            as LongPressGestureRecognizer)
+        .onLongPress!();
     await tester.pumpAndSettle();
 
     final popup = find.byType(AlertDialog);

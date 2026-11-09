@@ -409,7 +409,7 @@ class _TranscribePageState extends State<TranscribePage> {
                       child: ComparisonTextView(
                         originalText: _comparisonText,
                         comparison: _comparison,
-                        onDifferenceTap: (difference) =>
+                        onShowDetail: (difference) =>
                             _showDetail(difference, _comparisonText),
                         onSelectionChanged: (selection) {
                           _setState(

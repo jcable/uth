@@ -5,7 +5,7 @@ import 'package:uth/comparison_text_view.dart';
 import 'package:uth/text_classes.dart';
 
 void main() {
-  testWidgets('renders differences and handles taps and text selection', (
+  testWidgets('renders differences and handles long presses and selection', (
     tester,
   ) async {
     const difference = TextDifference(start: 3, end: 7, transcript: 'love');
@@ -18,7 +18,7 @@ void main() {
           body: ComparisonTextView(
             originalText: 'We like apples.',
             comparison: const TextComparison([difference]),
-            onDifferenceTap: (value) => tappedDifference = value,
+            onShowDetail: (value) => tappedDifference = value,
             onSelectionChanged: (value) => selectedText = value,
           ),
         ),
@@ -43,9 +43,10 @@ void main() {
       Colors.red.shade100,
     );
 
-    (spans.singleWhere((span) => span.text == 'like').recognizer!
-            as TapGestureRecognizer)
-        .onTap!();
+    final recognizer =
+        spans.singleWhere((span) => span.text == 'like').recognizer!
+            as LongPressGestureRecognizer;
+    recognizer.onLongPress!();
     expect(tappedDifference, same(difference));
 
     selectable.onSelectionChanged!(
@@ -74,7 +75,7 @@ void main() {
               TextDifference(start: 2, end: 3, transcript: 'bee'),
               TextDifference(start: 6, end: 7, transcript: 'dee'),
             ]),
-            onDifferenceTap: (_) {},
+            onShowDetail: (_) {},
             onSelectionChanged: (value) => selectedText = value,
             showTranscript: true,
           ),
@@ -107,7 +108,7 @@ void main() {
             comparison: const TextComparison([
               TextDifference(start: 0, end: 3, transcript: 'new'),
             ]),
-            onDifferenceTap: (_) {},
+            onShowDetail: (_) {},
             onSelectionChanged: (_) {},
           ),
         ),
@@ -141,7 +142,7 @@ void main() {
             comparison: const TextComparison([
               TextDifference(start: 3, end: 7, transcript: 'love'),
             ]),
-            onDifferenceTap: (_) {},
+            onShowDetail: (_) {},
             onSelectionChanged: (_) {},
             showTranscript: false,
           ),
