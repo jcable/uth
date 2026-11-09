@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'text_classes.dart';
+
 class TextDraft {
   const TextDraft(this.name, this.content);
 
@@ -20,7 +22,7 @@ class TextEditorDialog extends StatefulWidget {
   State<_TextEditorDialog> createState() => _TextEditorDialogState();
 }
 
-class TextEditorDialogState extends State<TextEditorDialog> {
+class _TextEditorDialogState extends State<TextEditorDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _contentController;
   final _formKey = GlobalKey<FormState>();
