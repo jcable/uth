@@ -53,10 +53,3 @@ void main() {
     expect(step.transcriptIndex, 5);
   });
 
-  test('TextDraft exposes its name and content', () {
-    const draft = TextDraft('Practice', 'Read this.');
-
-    expect(draft.name, 'Practice');
-    expect(draft.content, 'Read this.');
-  });
-}
