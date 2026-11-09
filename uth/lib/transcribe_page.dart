@@ -122,10 +122,10 @@ class _TranscribePageState extends State<TranscribePage> {
   }
 
   Future<void> _addText(SavedText text) async {
-    setState(() {
+    _setState(() {
       _texts = [..._texts, text];
     });
-    await _saveTexts();
+    unawaited(_saveTexts());
   }
 
   Future<void> _updateText(SavedText updated) async {
