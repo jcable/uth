@@ -20,6 +20,7 @@ class SavedTextsPage extends StatelessWidget {
     required this.onDarkModeChanged,
     required this.onErrorDismissed,
     required this.onAdd,
+    required this.onEdit,
     required this.onSelectedTextChanged,
     required this.detailPageRevision,
     required this.textPageBuilder,
@@ -33,6 +34,7 @@ class SavedTextsPage extends StatelessWidget {
   final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onErrorDismissed;
   final Future<SavedText?> Function() onAdd;
+  final Future<SavedText?> Function(SavedText) onEdit;
   final ValueChanged<SavedText?> onSelectedTextChanged;
   final ValueListenable<int> detailPageRevision;
   final Widget Function(SavedText) textPageBuilder;
@@ -170,6 +172,11 @@ class SavedTextsPage extends StatelessWidget {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          IconButton(
+                            tooltip: 'Edit ${text.name}',
+                            icon: const Icon(Icons.edit),
+                            onPressed: () => onEdit(text),
+                          ),
                           IconButton(
                             tooltip: 'Save ${text.name}',
                             icon: const Icon(Icons.save_outlined),

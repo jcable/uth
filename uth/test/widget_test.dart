@@ -459,9 +459,7 @@ void main() {
     );
     await _pumpApp(tester, documentsDirectory);
 
-    await tester.tap(find.text('Before'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Edit name or text'));
+    await tester.tap(find.byTooltip('Edit Before'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byWidgetPredicate(
@@ -484,8 +482,6 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 100)),
     );
 
-    await tester.tap(find.byTooltip('Back to texts'));
-    await tester.pumpAndSettle();
     expect(find.text('After'), findsOneWidget);
     expect(find.text('Transcript saved'), findsOneWidget);
 
@@ -522,7 +518,10 @@ void main() {
     await tester.tap(find.text('Empty'));
     await tester.pumpAndSettle();
 
-    expect(find.text('No text yet. Use Edit to paste text.'), findsOneWidget);
+    expect(
+      find.text('No text yet. Use Edit in the saved texts list to paste text.'),
+      findsOneWidget,
+    );
     expect(find.text('Record'), findsOneWidget);
   });
 }

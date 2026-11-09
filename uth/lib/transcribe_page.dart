@@ -344,7 +344,6 @@ class _TranscribePageState extends State<TranscribePage> {
     return SavedTextPage(
       text: text,
       onBack: () => Navigator.of(context).pop(),
-      onEdit: () => _editText(existing: text),
       body: Stack(
         children: [
           Column(
@@ -506,6 +505,7 @@ class _TranscribePageState extends State<TranscribePage> {
       onDarkModeChanged: widget.onDarkModeChanged,
       onErrorDismissed: () => _setState(() => _error = null),
       onAdd: _addText,
+      onEdit: (text) => _editText(existing: text),
       onSelectedTextChanged: _setSelectedText,
       detailPageRevision: _detailPageRevision,
       textPageBuilder: (text) => _buildTextView(_selected ?? text),

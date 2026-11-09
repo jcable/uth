@@ -96,7 +96,11 @@ class ComparisonTextSpanBuilder {
       spans.add(TextSpan(text: original.substring(cursor)));
     }
     if (original.isEmpty) {
-      spans.add(const TextSpan(text: 'No text yet. Use Edit to paste text.'));
+      spans.add(
+        const TextSpan(
+          text: 'No text yet. Use Edit in the saved texts list to paste text.',
+        ),
+      );
     }
     return spans;
   }
