@@ -15,7 +15,6 @@ import 'text_classes.dart';
 import 'transcription_service.dart';
 import 'comparison_text_view.dart';
 import 'sentence_tree_view.dart';
-import 'text_editor.dart';
 
 class TranscribePage extends StatefulWidget {
   const TranscribePage({
