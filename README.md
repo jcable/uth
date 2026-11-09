@@ -35,7 +35,7 @@ https://learngaelic.scot/dictionary/.
 
 The home screen is a list of scripts entered by the user by typing or pasting the text in.
 
-Texts can be deleted from the list and exported, along with any transcript.
+Texts can be edited, deleted from the list and exported, along with any transcript.
 
 Selecting a script shows the text in a scrollable view.
 
@@ -53,9 +53,11 @@ The transcript is compared with the script, ignoring any differences of capitali
 
 Where the transcript differs from the script, the script is highlighted in green. The transcript for a section is shown after the original and highlighted in red. The transcript text can be hidden to help the user read the script, or parts of it, out again.
 
-Tapping on a green section of text opens the text in a popup window where the individual words can be looked up to help the user know how to pronounce them.
+Long pressing on a green section of text opens the text in a popup window where the individual words can be looked up to help the user know how to pronounce them.
 
-The user can select a section of the text and record new audio for transcription for that section. The relevant section of the full transcript is replaced with the new transcript and the transcript is compared again with the script and the highlighting updated.
+The user can select a section of the text and record new audio for transcription for that section. There is a toggle to temporarily break each paragraph into one sentence per paragraph. This makes it easier to re-record a sentence, as the UI uses double tapping to select a word and triple tapping to select a paragraph.
+
+The relevant section of the full transcript is replaced with the new transcript and the transcript is compared again with the script and the highlighting updated.
 
 The audio samples are discarded after transcription. This might change in the future.
 
