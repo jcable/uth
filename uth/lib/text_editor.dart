@@ -19,7 +19,7 @@ class TextEditorDialog extends StatefulWidget {
   final SavedText? existing;
 
   @override
-  State<_TextEditorDialog> createState() => _TextEditorDialogState();
+  State<TextEditorDialog> createState() => _TextEditorDialogState();
 }
 
 class _TextEditorDialogState extends State<TextEditorDialog> {
