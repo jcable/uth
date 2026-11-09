@@ -220,10 +220,3 @@ class EditStep {
   final int? originalIndex;
   final int? transcriptIndex;
 }
-
-class TextDraft {
-  const TextDraft(this.name, this.content);
-
-  final String name;
-  final String content;
-}
