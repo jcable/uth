@@ -1,6 +1,10 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:typed_data';
+
 import 'package:archive/archive.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import 'about_page.dart';
 import 'settings_page.dart';
@@ -17,9 +21,11 @@ class SavedTextsPage extends StatelessWidget {
     required this.onDarkModeChanged,
     required this.onErrorDismissed,
     required this.onAdd,
-    required this.onOpen,
-    required this.onExport,
-    required this.onDelete,
+    required this.onSelectedTextChanged,
+    required this.detailPageRevision,
+    required this.textPageBuilder,
+    required this.onErrorChanged,
+    required this.onTextsChanged,
   });
 
   final List<SavedText> texts;
@@ -27,10 +33,75 @@ class SavedTextsPage extends StatelessWidget {
   final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onErrorDismissed;
-  final VoidCallback onAdd;
-  final ValueChanged<SavedText> onOpen;
-  final ValueChanged<SavedText> onExport;
-  final ValueChanged<SavedText> onDelete;
+  final Future<SavedText?> Function() onAdd;
+  final ValueChanged<SavedText?> onSelectedTextChanged;
+  final ValueListenable<int> detailPageRevision;
+  final Widget Function(SavedText) textPageBuilder;
+  final ValueChanged<String?> onErrorChanged;
+  final Future<void> Function(List<SavedText>) onTextsChanged;
+
+  Future<void> _addText(BuildContext context) async {
+    final text = await onAdd();
+    if (text != null && context.mounted) _openText(context, text);
+  }
+
+  void _openText(BuildContext context, SavedText text) {
+    onSelectedTextChanged(text);
+    unawaited(
+      Navigator.of(context)
+          .push(
+            MaterialPageRoute<void>(
+              builder: (_) => ValueListenableBuilder<int>(
+                valueListenable: detailPageRevision,
+                builder: (context, _, _) => textPageBuilder(text),
+              ),
+            ),
+          )
+          .whenComplete(() => onSelectedTextChanged(null)),
+    );
+  }
+
+  Future<void> _exportText(BuildContext context, SavedText text) async {
+    try {
+      final fileName = '${safeExportName(text.name)}.zip';
+      final savedFile = await FilePicker.saveFile(
+        fileName: fileName,
+        bytes: createSavedTextArchive(text),
+        mimeType: 'application/zip',
+        dialogTitle: 'Save ${text.name}',
+      );
+      if (savedFile == null || !context.mounted) return;
+      onErrorChanged(null);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Saved $fileName')));
+    } catch (error) {
+      if (context.mounted) {
+        onErrorChanged('Could not save "${text.name}": $error');
+      }
+    }
+  }
+
+  Future<void> _deleteText(BuildContext context, SavedText text) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete text?'),
+        content: Text('“${text.name}” and its transcript will be deleted.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await onTextsChanged(texts.where((item) => item.id != text.id).toList());
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -64,7 +135,7 @@ class SavedTextsPage extends StatelessWidget {
       ],
     ),
     floatingActionButton: FloatingActionButton.extended(
-      onPressed: onAdd,
+      onPressed: () => _addText(context),
       icon: const Icon(Icons.add),
       label: const Text('Add text'),
     ),
@@ -96,19 +167,19 @@ class SavedTextsPage extends StatelessWidget {
                             ? 'No transcript yet'
                             : 'Transcript saved',
                       ),
-                      onTap: () => onOpen(text),
+                      onTap: () => _openText(context, text),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
                             tooltip: 'Save ${text.name}',
                             icon: const Icon(Icons.save_outlined),
-                            onPressed: () => onExport(text),
+                            onPressed: () => _exportText(context, text),
                           ),
                           IconButton(
                             tooltip: 'Delete ${text.name}',
                             icon: const Icon(Icons.delete_outline),
-                            onPressed: () => onDelete(text),
+                            onPressed: () => _deleteText(context, text),
                           ),
                         ],
                       ),

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:path_provider/path_provider.dart';
@@ -122,32 +121,12 @@ class _TranscribePageState extends State<TranscribePage> {
     }
   }
 
-  Future<void> _exportText(SavedText text) async {
-    try {
-      final fileName = '${safeExportName(text.name)}.zip';
-      final savedFile = await FilePicker.saveFile(
-        fileName: fileName,
-        bytes: createSavedTextArchive(text),
-        mimeType: 'application/zip',
-        dialogTitle: 'Save ${text.name}',
-      );
-      if (savedFile == null || !mounted) return;
-      _setState(() => _error = null);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Saved $fileName')));
-    } catch (error) {
-      if (mounted) {
-        _setState(() => _error = 'Could not save "${text.name}": $error');
-      }
-    }
-  }
-
-  Future<void> _editText({SavedText? existing}) async {
+  Future<SavedText?> _editText({SavedText? existing}) async {
     final draft = await showDialog<TextDraft>(
       context: context,
       builder: (context) => TextEditorDialog(existing: existing),
     );
-    if (draft == null || !mounted) return;
+    if (draft == null || !mounted) return null;
 
     if (existing == null) {
       final text = SavedText(
@@ -157,13 +136,9 @@ class _TranscribePageState extends State<TranscribePage> {
       );
       _setState(() {
         _texts = [..._texts, text];
-        _selectedId = text.id;
-        _selection = null;
-        _comparison = compareText(text.content, text.transcript);
       });
-      if (mounted) _openText(text);
-      await _saveTexts();
-      return;
+      unawaited(_saveTexts());
+      return text;
     } else {
       final updated = existing.copyWith(
         name: draft.name,
@@ -179,54 +154,28 @@ class _TranscribePageState extends State<TranscribePage> {
       });
     }
     await _saveTexts();
+    return null;
   }
 
-  void _openText(SavedText text) {
+  Future<SavedText?> _addText() => _editText();
+
+  void _setSelectedText(SavedText? text) {
+    if (!mounted) return;
     _setState(() {
-      _selectedId = text.id;
-      _selection = null;
-      _comparison = compareText(text.content, text.transcript);
+      _selectedId = text?.id;
+      if (text != null) {
+        _selection = null;
+        _comparison = compareText(text.content, text.transcript);
+      }
     });
-    unawaited(
-      Navigator.of(context)
-          .push(
-            MaterialPageRoute<void>(
-              builder: (_) => ValueListenableBuilder<int>(
-                valueListenable: _detailPageRevision,
-                builder: (context, _, _) {
-                  return _buildTextView(_selected ?? text);
-                },
-              ),
-            ),
-          )
-          .whenComplete(() {
-            if (mounted) _setState(() => _selectedId = null);
-          }),
-    );
   }
 
-  Future<void> _deleteText(SavedText text) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete text?'),
-        content: Text('“${text.name}” and its transcript will be deleted.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
+  Future<void> _updateTexts(List<SavedText> texts) async {
     _setState(() {
-      _texts = _texts.where((item) => item.id != text.id).toList();
-      if (_selectedId == text.id) _selectedId = null;
+      _texts = texts;
+      if (!_texts.any((text) => text.id == _selectedId)) {
+        _selectedId = null;
+      }
     });
     await _saveTexts();
   }
@@ -556,10 +505,12 @@ class _TranscribePageState extends State<TranscribePage> {
       darkMode: widget.darkMode,
       onDarkModeChanged: widget.onDarkModeChanged,
       onErrorDismissed: () => _setState(() => _error = null),
-      onAdd: _editText,
-      onOpen: _openText,
-      onExport: _exportText,
-      onDelete: _deleteText,
+      onAdd: _addText,
+      onSelectedTextChanged: _setSelectedText,
+      detailPageRevision: _detailPageRevision,
+      textPageBuilder: (text) => _buildTextView(_selected ?? text),
+      onErrorChanged: (error) => _setState(() => _error = error),
+      onTextsChanged: _updateTexts,
     );
   }
 }
