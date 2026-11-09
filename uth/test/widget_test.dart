@@ -149,6 +149,17 @@ void main() {
     },
   );
 
+  test('a deleted selected section can be inserted into the transcript', () {
+    final transcript = replaceTranscriptForSelection(
+      'I say hello there.',
+      'I say there.',
+      const TextSelection(baseOffset: 6, extentOffset: 11),
+      'goodbye',
+    );
+
+    expect(transcript, 'I say goodbye there.');
+  });
+
   test('re-recording rejects a selection that contains no words', () {
     expect(
       () => replaceTranscriptForSelection(

@@ -639,6 +639,19 @@ String replaceTranscriptForSelection(
   final start = startToken < transcriptWords.length
       ? transcriptWords[startToken].start
       : transcript.length;
-  final end = endToken > 0 ? transcriptWords[endToken - 1].end : start;
+  if (endToken == startToken) {
+    var insertion = replacement;
+    if (startToken < transcriptWords.length) {
+      final previousEnd = startToken == 0
+          ? 0
+          : transcriptWords[startToken - 1].end;
+      final whitespace = transcript.substring(previousEnd, start);
+      insertion += whitespace.isEmpty ? ' ' : whitespace;
+    } else if (start > 0 && !RegExp(r'\s').hasMatch(transcript[start - 1])) {
+      insertion = ' $insertion';
+    }
+    return transcript.replaceRange(start, start, insertion);
+  }
+  final end = endToken > startToken ? transcriptWords[endToken - 1].end : start;
   return transcript.replaceRange(start, end, replacement);
 }
