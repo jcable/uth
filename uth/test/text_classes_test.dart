@@ -52,4 +52,5 @@ void main() {
     expect(step.originalIndex, 3);
     expect(step.transcriptIndex, 5);
   });
+}
 
