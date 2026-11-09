@@ -14,7 +14,7 @@ class TextDraft {
 }
 
 class TextEditorDialog extends StatefulWidget {
-  const TextEditorDialog({required this.existing});
+  const TextEditorDialog({super.key, required this.existing});
 
   final SavedText? existing;
 
