@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'text_classes.dart';
 
@@ -45,7 +46,6 @@ class ComparisonTextSpanBuilder {
     required bool showTranscript,
     required Color originalHighlightColor,
     required Color transcriptHighlightColor,
-    void Function(TextDifference)? onShowDetail,
   }) {
     final spans = <TextSpan>[];
     var cursor = 0;
@@ -64,14 +64,14 @@ class ComparisonTextSpanBuilder {
         difference.end,
       );
       LongPressGestureRecognizer? recognizer;
-      if (onShowDetail != null) {
-        if (_recognizers.length == recognizerIndex) {
+      if (_recognizers.length == recognizerIndex) {
           _recognizers.add(LongPressGestureRecognizer());
-        }
-        // Keep detail activation separate from double/triple-tap selection.
-        recognizer = _recognizers[recognizerIndex++]
-          ..onLongPress = () => onShowDetail(difference);
       }
+      // Keep detail activation separate from double/triple-tap selection.
+      recognizer = _recognizers[recognizerIndex++]
+        ..onLongPress = () async {
+            await launchUrl(_dictionaryUri(originalSegment));
+        }
       spans.add(
         TextSpan(
           text: originalSegment,
@@ -112,4 +112,8 @@ class ComparisonTextSpanBuilder {
     }
     _recognizers.clear();
   }
+}
+
+Uri _dictionaryUri(String query)) {
+  returnbUri.parse('https://learngaelic.scot/dictionary/index.jsp?slang=gd&wholeword=true&abairt=$query');
 }
