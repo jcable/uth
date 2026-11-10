@@ -115,5 +115,5 @@ class ComparisonTextSpanBuilder {
 }
 
 Uri _dictionaryUri(String query) {
-  returnbUri.parse('https://learngaelic.scot/dictionary/index.jsp?slang=gd&wholeword=true&abairt=$query');
+  return Uri.parse('https://learngaelic.scot/dictionary/index.jsp?slang=gd&wholeword=true&abairt=$query');
 }
