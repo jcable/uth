@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
-import 'dictionary_search.dart';
 import 'saved_text_page.dart';
 import 'saved_texts_page.dart';
 import 'text_classes.dart';
@@ -321,17 +320,6 @@ class _TranscribePageState extends State<TranscribePage> {
     return transcribeAudio(file);
   }
 
-  void _showDetail(TextDifference difference, String original) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => SentenceTreeChildrenDialog(
-        text: original.substring(difference.start, difference.end),
-        dictionarySearch: widget.dictionarySearch,
-        playbackPlayer: _playbackPlayer,
-      ),
-    );
-  }
-
   Widget _buildTextView(SavedText text) {
     final isRecordingSelection = _selection != null && !_selection!.isCollapsed;
     const verticalPadding = 12.0;
@@ -409,8 +397,6 @@ class _TranscribePageState extends State<TranscribePage> {
                       child: ComparisonTextView(
                         originalText: _comparisonText,
                         comparison: _comparison,
-                        onShowDetail: (difference) =>
-                            _showDetail(difference, _comparisonText),
                         onSelectionChanged: (selection) {
                           _setState(
                             () => _selection = _sourceSelection(selection),
