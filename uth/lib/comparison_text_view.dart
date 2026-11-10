@@ -8,14 +8,12 @@ class ComparisonTextView extends StatefulWidget {
     super.key,
     required this.originalText,
     required this.comparison,
-    required this.onShowDetail,
     required this.onSelectionChanged,
     this.showTranscript = true,
   });
 
   final String originalText;
   final TextComparison comparison;
-  final ValueChanged<TextDifference> onShowDetail;
   final ValueChanged<TextSelection?> onSelectionChanged;
   final bool showTranscript;
 
@@ -50,7 +48,6 @@ class _ComparisonTextViewState extends State<ComparisonTextView> {
       showTranscript: widget.showTranscript,
       originalHighlightColor: originalHighlightColor,
       transcriptHighlightColor: transcriptHighlightColor,
-      onShowDetail: widget.onShowDetail,
     );
     _displaySpans = spans;
 
