@@ -25,7 +25,6 @@ class TranscribePage extends StatefulWidget {
   });
 
   final Future<Directory> Function()? documentsDirectoryProvider;
-  final DictionarySearch? dictionarySearch;
   final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
 
