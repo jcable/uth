@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -37,6 +38,11 @@ class _AboutPageState extends State<AboutPage> {
         return Markdown(
           data: snapshot.data!,
           padding: const EdgeInsets.all(24),
+          onTapLink: (String text, String? href, String title) {
+            if (href != null) {
+              launchUrl(Uri.parse(href));
+            }
+          },
         );
       },
     ),
