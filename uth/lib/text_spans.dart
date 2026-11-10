@@ -71,7 +71,7 @@ class ComparisonTextSpanBuilder {
       recognizer = _recognizers[recognizerIndex++]
         ..onLongPress = () async {
             await launchUrl(_dictionaryUri(originalSegment));
-        }
+        };
       spans.add(
         TextSpan(
           text: originalSegment,
