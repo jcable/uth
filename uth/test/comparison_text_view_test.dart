@@ -18,7 +18,6 @@ void main() {
           body: ComparisonTextView(
             originalText: 'We like apples.',
             comparison: const TextComparison([difference]),
-            onShowDetail: (value) => tappedDifference = value,
             onSelectionChanged: (value) => selectedText = value,
           ),
         ),
@@ -75,7 +74,6 @@ void main() {
               TextDifference(start: 2, end: 3, transcript: 'bee'),
               TextDifference(start: 6, end: 7, transcript: 'dee'),
             ]),
-            onShowDetail: (_) {},
             onSelectionChanged: (value) => selectedText = value,
             showTranscript: true,
           ),
@@ -108,7 +106,6 @@ void main() {
             comparison: const TextComparison([
               TextDifference(start: 0, end: 3, transcript: 'new'),
             ]),
-            onShowDetail: (_) {},
             onSelectionChanged: (_) {},
           ),
         ),
@@ -142,7 +139,6 @@ void main() {
             comparison: const TextComparison([
               TextDifference(start: 3, end: 7, transcript: 'love'),
             ]),
-            onShowDetail: (_) {},
             onSelectionChanged: (_) {},
             showTranscript: false,
           ),
