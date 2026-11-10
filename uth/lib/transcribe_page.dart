@@ -19,7 +19,6 @@ class TranscribePage extends StatefulWidget {
   const TranscribePage({
     super.key,
     this.documentsDirectoryProvider,
-    this.dictionarySearch,
     required this.darkMode,
     required this.onDarkModeChanged,
   });
