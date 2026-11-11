@@ -68,7 +68,7 @@ class _TranscribePageState extends State<TranscribePage> {
   }
 
   void _updateComparisonText(String content, String transcript) {
-    final formattedText = _formatComparisonText(content, _splitParagraphs);
+    final formattedText = formatComparisonText(content, _splitParagraphs);
     _comparisonText = formattedText.text;
     _comparisonSourceOffsets = formattedText.sourceOffsets;
     _comparison = compareText(_comparisonText, transcript);
