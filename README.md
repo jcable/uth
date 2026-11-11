@@ -27,7 +27,7 @@ See also https://www.clarin.ac.uk/eist-gaelic-speech-recognition-tool
 
 ## Dictionary 
 
-Words not correctly recognised can be looked up in the LearnGaelic dictionary and where found, the IPA for the word is shown and the audio sample played.
+Words not correctly recognised can be looked up in the LearnGaelic dictionary. Where found, the LearnGaelic dictionary displays the simplified IPA for the word and may provide an audio sample.
 
 https://learngaelic.scot/dictionary/. 
  
