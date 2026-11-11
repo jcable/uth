@@ -220,3 +220,62 @@ class EditStep {
   final int? originalIndex;
   final int? transcriptIndex;
 }
+
+class FormattedComparisonText {
+  const FormattedComparisonText(this.text, this.sourceOffsets);
+
+  final String text;
+  final List<int> sourceOffsets;
+}
+
+FormattedComparisonText formatComparisonText(
+  String text,
+  bool splitParagraphs,
+) {
+  if (!splitParagraphs) {
+    return FormattedComparisonText(
+      text,
+      List<int>.generate(text.length + 1, (index) => index),
+    );
+  }
+
+  final sentences = sentencesFromText(text);
+  if (sentences.length < 2) {
+    return FormattedComparisonText(
+      text,
+      List<int>.generate(text.length + 1, (index) => index),
+    );
+  }
+
+  final formatted = StringBuffer();
+  final sourceOffsets = <int>[];
+
+  void appendSourceRange(int start, int end) {
+    if (sourceOffsets.isEmpty) {
+      sourceOffsets.add(start);
+    } else {
+      sourceOffsets.last = start;
+    }
+    formatted.write(text.substring(start, end));
+    for (var index = start; index < end; index++) {
+      sourceOffsets.add(index + 1);
+    }
+  }
+
+  appendSourceRange(0, sentences.first.start);
+  for (var index = 0; index < sentences.length; index++) {
+    final sentence = sentences[index];
+    appendSourceRange(sentence.start, sentence.end);
+    if (index < sentences.length - 1) {
+      final nextStart = sentences[index + 1].start;
+      sourceOffsets.last = sentence.end;
+      formatted.write('\n\n');
+      sourceOffsets
+        ..add(sentence.end)
+        ..add(nextStart);
+    }
+  }
+  appendSourceRange(sentences.last.end, text.length);
+
+  return FormattedComparisonText(formatted.toString(), sourceOffsets);
+}
