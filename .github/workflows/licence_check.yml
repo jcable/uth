@@ -38,8 +38,7 @@ jobs:
 
       - name: Install ScanCode Toolkit
         run: |
-          pip install scancode-toolkit
-          pip install -e .
+          pip install -e scancode-toolkit
 
       - name: Scan lib/ for embedded GPL/copyleft clues
         run: |
