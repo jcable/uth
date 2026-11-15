@@ -44,11 +44,11 @@ jobs:
 
       - name: Scan lib/ for embedded GPL/copyleft clues
         run: |
-          pip list
           scancode -cl --only-findings --json-pp scan-results.json lib/
 
       - name: create report
         run: |
+          ls
           python -c '
           import json, sys
           with open("scan-results.json") as f:
@@ -72,4 +72,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scancode-license-report
-          path: scan-results.json
+          path: uth/scan-results.json
