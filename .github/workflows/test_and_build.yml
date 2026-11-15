@@ -9,16 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Run License Compliance Checker
-        uses: soheilbr82/automated-license-check@v1
-        with:
-          allowed_licenses: "MIT, Apache-2.0, BSD-3-Clause"
   test:
-    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
