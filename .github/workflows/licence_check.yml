@@ -25,10 +25,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Check Flutter package licenses (Permissive policy)
+      - name: Check Flutter package licenses
         run: |
           dart pub global activate legal
-          dart pub global run legal check --policy permissive
+          dart pub global run legal check
 
       # 2. Scan Dart source files for inline AI-written GPL headers/snippets
       - name: Set up Python for ScanCode
