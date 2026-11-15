@@ -44,6 +44,7 @@ jobs:
 
       - name: Scan lib/ for embedded GPL/copyleft clues
         run: |
+          pip list
           scancode -cl --only-findings --json-pp scan-results.json lib/
 
       - name: create report
