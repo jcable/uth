@@ -5,7 +5,70 @@ description: "An application to help reading and pronunciation."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 legal:
   policy: permissive
+  licenses:
+    allow:
+      - MS-PL
+      - MPL-2.0
   unknown: deny
+  packages:
+    overrides:
+      record:
+        expression: "MS-PL"
+        reason: "The record package is licensed under the Microsoft Public License (MS-PL) which is a permissive license. It is not copyleft and does not require derivative works to be open source. Therefore, it is safe to use in this project."
+      record_windows:
+        expression: "MS-PL"
+        reason: "The record package is licensed under the Microsoft Public License (MS-PL) which is a permissive license. It is not copyleft and does not require derivative works to be open source. Therefore, it is safe to use in this project."
+      record_web:
+        expression: "MS-PL"
+        reason: "The record package is licensed under the Microsoft Public License (MS-PL) which is a permissive license. It is not copyleft and does not require derivative works to be open source. Therefore, it is safe to use in this project."
+      record_platform_interface:
+        expression: "MS-PL"
+        reason: "The record package is licensed under the Microsoft Public License (MS-PL) which is a permissive license. It is not copyleft and does not require derivative works to be open source. Therefore, it is safe to use in this project."
+      record_android:
+        expression: "MS-PL"
+        reason: "The record package is licensed under the Microsoft Public License (MS-PL) which is a permissive license. It is not copyleft and does not require derivative works to be open source. Therefore, it is safe to use in this project."
+      record_darwin:
+        expression: "MS-PL"
+        reason: "The record package is licensed under the Microsoft Public License (MS-PL) which is a permissive license. It is not copyleft and does not require derivative works to be open source. Therefore, it is safe to use in this project."
+      record_linux:
+        expression: "MS-PL"
+        reason: "The record package is licensed under the Microsoft Public License (MS-PL) which is a permissive license. It is not copyleft and does not require derivative works to be open source. Therefore, it is safe to use in this project."
+      file_picker:
+        expression: "MIT"
+        reason: "Reviewed as safe."
+      file_picker_platform_interface:
+        expression: "MIT"
+        reason: "Reviewed as safe."
+      file_picker_linux:
+        expression: "MIT"
+        reason: "Reviewed as safe."
+      file_picker_darwin:
+        expression: "MIT"
+        reason: "Reviewed as safe."
+      file_picker_web:
+        expression: "MIT"
+        reason: "Reviewed as safe."
+      windows_file_picker:
+        expression: "MS-PL"
+        reason: "The windows_file_picker package is licensed under the Microsoft Public License (MS-PL) which is a permissive license. It is not copyleft and does not require derivative works to be open source. Therefore, it is safe to use in this project."
+      android_file_picker:
+        expression: "MIT"
+        reason: "Reviewed as safe."
+      archive:
+        expression: "MIT"
+        reason: "Reviewed as safe."
+      dbus:
+        expression: "MPL-2.0"
+        reason: "Reviewed as safe."
+      flutter_web_plugins:
+        expression: "BSD-3-Clause"
+        reason: "Reviewed as safe."
+      html:
+        expression: "BSD-2-Clause"
+        reason: "Reviewed as safe."
+      sky_engine:
+        expression: "BSD-3-Clause"
+        reason: "Reviewed as safe."
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
