@@ -40,7 +40,9 @@ jobs:
         run: pip install scancode-toolkit
 
       - name: Scan lib/ for embedded GPL/copyleft clues
-        run: scancode -cl --only-findings --json-pp scan-results.json lib/
+        run: |
+          pip list
+          scancode -cl --only-findings --json-pp scan-results.json lib/
       - name: create report
         run: |
           python -c '
