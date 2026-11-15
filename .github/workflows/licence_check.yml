@@ -37,7 +37,8 @@ jobs:
           python-version: '3.11'
 
       - name: Install ScanCode Toolkit
-        run: pip install scancode-toolkit --constraint https://githubusercontent.com
+        run: pip install scancode-toolkit "pluggy<1.0"
+
       - name: Scan lib/ for embedded GPL/copyleft clues
         run: |
           scancode -cl --only-findings --json-pp scan-results.json lib/
