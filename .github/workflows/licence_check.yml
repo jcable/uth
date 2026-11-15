@@ -38,7 +38,7 @@ jobs:
 
       - name: Install ScanCode Toolkit
         run: |
-          echo "setuptools<81" > /tmp/constraints.txt
+          printf "setuptools<81\npluggy<1.7.0\n" > /tmp/constraints.txt
           python -m pip install --upgrade pip wheel
           pip install -c /tmp/constraints.txt scancode-toolkit setuptools
 
