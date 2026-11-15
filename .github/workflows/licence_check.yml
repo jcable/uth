@@ -34,15 +34,13 @@ jobs:
       - name: Install python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.12' 
-
-      - name: Install ScanCode Toolkit
+          python-version: '3.12'
+      - name: Download and run ScanCode Toolkit
         run: |
-          pip install scancode-toolkit
+          curl -L -o scancode.tar.gz https://github.com
+          tar -xzf scancode.tar.gz
+          ./scancode-toolkit-v32.5.0/scancode -cl --only-findings --json-pp scan-results.json lib/
 
-      - name: Scan lib/ for embedded GPL/copyleft clues
-        run: |
-          scancode -cl --only-findings --json-pp scan-results.json lib/
       - name: create report
         run: |
           python -c '
