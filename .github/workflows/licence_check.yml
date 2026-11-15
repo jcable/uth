@@ -35,11 +35,15 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - name: Download and run ScanCode Toolkit
+
+      - name: Install ScanCode Toolkit
         run: |
-          curl -L -o scancode.tar.gz https://github.com
-          tar -xzf scancode.tar.gz
-          ./scancode-toolkit-v32.5.0/scancode -cl --only-findings --json-pp scan-results.json lib/
+          python -m pip install --upgrade pip "setuptools<81" wheel
+          pip install scancode-toolkit
+
+      - name: run scan code
+        run: |
+          scancode -cl --only-findings --json-pp scan-results.json lib/
 
       - name: create report
         run: |
