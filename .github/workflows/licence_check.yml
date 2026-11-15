@@ -35,6 +35,10 @@ jobs:
         run: pip install scancode-toolkit
       - name: Scan lib/ for embedded GPL/copyleft clues
         run: |
+          which scancode
+          which python
+          which pip
+          pip list
           scancode -cl --only-findings --json-pp scan-results.json lib/
           python3 -c '
           import json, sys
