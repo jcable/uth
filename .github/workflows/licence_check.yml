@@ -31,14 +31,8 @@ jobs:
           dart pub global run legal check
 
       # 2. Scan Dart source files for inline AI-written GPL headers/snippets
-      - name: Set up Python for ScanCode
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Install ScanCode Toolkit
-        run: pip install scancode-toolkit "pluggy<1.0"
-
+        run: pip install scancode-toolkit
       - name: Scan lib/ for embedded GPL/copyleft clues
         run: |
           scancode -cl --only-findings --json-pp scan-results.json lib/
