@@ -1,0 +1,66 @@
+name: GPL & License Compliance Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main ]
+
+jobs:
+  scan-licenses:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. Check pubspec.yaml & Dart/Flutter dependencies for copyleft licenses
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check Flutter package licenses (Permissive policy)
+        run: |
+          dart pub global activate legal
+          dart pub global run legal check --policy permissive
+
+      # 2. Scan Dart source files for inline AI-written GPL headers/snippets
+      - name: Set up Python for ScanCode
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ScanCode Toolkit
+        run: pip install scancode-toolkit
+
+      - name: Scan lib/ for embedded GPL/copyleft clues
+        run: |
+          scancode -cl --only-findings --json-pp scan-results.json lib/
+          python3 -c '
+          import json, sys
+          with open("scan-results.json") as f:
+              data = json.load(f)
+          gpl_hits = []
+          for file in data.get("files", []):
+              for lic in file.get("license_detections", []):
+                  expr = lic.get("license_expression", "").lower()
+                  if any(k in expr for k in ["gpl", "agpl", "lgpl", "copyleft"]):
+                      gpl_hits.append((file["path"], expr))
+          if gpl_hits:
+              print("ERROR: Copyleft/GPL clues detected in source files:")
+              for path, expr in gpl_hits:
+                  print(f" - {path}: {expr}")
+              sys.exit(1)
+          print("No GPL/copyleft clues detected in lib/.")
+          '
+
+      - name: Upload scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scancode-license-report
+          path: scan-results.json
