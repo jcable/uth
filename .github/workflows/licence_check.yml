@@ -14,7 +14,7 @@ jobs:
         working-directory: ./uth
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 1. Check pubspec.yaml & Dart/Flutter dependencies for copyleft licenses
       - name: Set up Flutter
@@ -32,7 +32,12 @@ jobs:
 
       # 2. Scan Dart source files for inline AI-written GPL headers/snippets
       - name: Install ScanCode Toolkit
-        run: pip3.14 install scancode-toolkit
+        uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14' 
+      - run: python my_script.py
+        run: pip install scancode-toolkit
       - name: Scan lib/ for embedded GPL/copyleft clues
         run: |
           scancode -cl --only-findings --json-pp scan-results.json lib/
