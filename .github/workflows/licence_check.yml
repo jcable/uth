@@ -9,7 +9,9 @@ on:
 jobs:
   scan-licenses:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./uth
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
