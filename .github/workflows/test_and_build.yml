@@ -12,6 +12,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7.0.1
       - name: Run License Compliance Checker
         uses: soheilbr82/automated-license-check@v1
         with:
