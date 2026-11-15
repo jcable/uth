@@ -32,11 +32,11 @@ jobs:
 
       # 2. Scan Dart source files for inline AI-written GPL headers/snippets
       - name: Install ScanCode Toolkit
-        uses: actions/checkout@v7
         uses: actions/setup-python@v7
         with:
           python-version: '3.14' 
         run: pip install scancode-toolkit
+
       - name: Scan lib/ for embedded GPL/copyleft clues
         run: |
           scancode -cl --only-findings --json-pp scan-results.json lib/
