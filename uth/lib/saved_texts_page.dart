@@ -111,14 +111,15 @@ class SavedTextsPage extends StatelessWidget {
     await onTextDeleted(text);
   }
 
-  Future<void> _navigateAndDisplaySelection(BuildContext context) async {
+  Future<void> _navigateAndDisplaySelection(BuildContext context, SavedText text) async {
     // Navigator.push returns a Future that completes after calling
     // Navigator.pop on the Selection Screen.
-    final result = await Navigator.push(
+    final updated = await Navigator.push(
       context,
       // Create the SelectionScreen in the next step.
       MaterialPageRoute<SavedText>(builder: (context) => const SavedTextPage(darkMode, text),
     );
+    await onUpdateText(updated);
   }
 
   @override
