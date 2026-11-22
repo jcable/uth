@@ -115,7 +115,7 @@ class SavedTextsPage extends StatelessWidget {
       context,
       MaterialPageRoute<SavedText>(builder: (context) => const SavedTextPage(darkMode, text)),
     );
-    await onUpdateText(updated);
+    await onUpdateText(updated!);
   }
 
   @override
@@ -183,7 +183,7 @@ class SavedTextsPage extends StatelessWidget {
                             : 'Transcript saved',
                       ),
                       onTap: () {
-_navigateAndDisplaySelection(context);
+_navigateAndDisplaySelection(context, text);
                       },
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
