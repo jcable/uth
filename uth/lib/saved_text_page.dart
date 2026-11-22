@@ -257,7 +257,6 @@ class _SavedTextPageState extends State<SavedTextPage> {
         ],
       ),
   );
-}
 
   void _setState(VoidCallback callback) {
     setState(callback);
