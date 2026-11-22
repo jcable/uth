@@ -35,7 +35,7 @@ class SavedTextsPage extends StatelessWidget {
   final VoidCallback onErrorDismissed;
   final Future<void> Function(SavedText) onAddText;
   final Future<void> Function(SavedText) onUpdateText;
-  final Widget detailsScreen;
+  final Future<Widget> Function(SavedText) detailsScreen;
    final Future<void> Function(SavedText) onTextDeleted;
   final ValueListenable<int> detailPageRevision;
   final ValueChanged<String?> onErrorChanged;
@@ -176,7 +176,7 @@ class SavedTextsPage extends StatelessWidget {
                       ),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => detailsScreen(),
+                          builder: (context) => detailsScreen(text),
                           settings: RouteSettings(
                             arguments: text
                           )
