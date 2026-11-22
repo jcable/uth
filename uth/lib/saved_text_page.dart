@@ -15,7 +15,7 @@ class SavedTextPage extends StatefulWidget {
   const SavedTextPage({
     super.key,
     required this.darkMode,
-    required this text,
+    required this.text,
     required this.onBack,
     required this.onAddTranscript,
   });
