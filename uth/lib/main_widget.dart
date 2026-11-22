@@ -15,8 +15,8 @@ import 'transcription_service.dart';
 import 'comparison_text_view.dart';
 import 'sentence_tree_view.dart';
 
-class TranscribePage extends StatefulWidget {
-  const TranscribePage({
+class MainWidget extends StatefulWidget {
+  const MainWidget({
     super.key,
     this.documentsDirectoryProvider,
     required this.darkMode,
@@ -28,10 +28,10 @@ class TranscribePage extends StatefulWidget {
   final ValueChanged<bool> onDarkModeChanged;
 
   @override
-  State<TranscribePage> createState() => _TranscribePageState();
+  State<MainWidget> createState() => _MainWidgetState();
 }
 
-class _TranscribePageState extends State<TranscribePage> {
+class _MainWidgetPageState extends State<MainWidget> {
   AudioRecorder? _recorder;
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _playerStateSubscription;
