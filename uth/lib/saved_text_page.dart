@@ -372,7 +372,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
       _error = null;
     });
     try {
-      final text = widget text;
+      final text = widget.text;
       await _stopPlayback();
       final result = await _transcribe(file);
       if (!mounted) return;
