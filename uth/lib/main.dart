@@ -37,32 +37,6 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  Widget _buildTextView(SavedText text) {
-    return SavedTextPage(
-      darkMode: _darkMode,
-      text: text,
-      onBack: () => Navigator.of(context).pop(),
-      onAddTranscript: (SavedText updated) async => {
-        await _updateText(updated)
-      },
-    );
-  }
-
-  Future<void> _openText(SavedText text) async {
-    return 
-      Navigator.of(context)
-          .push(
-            MaterialPageRoute<void>(
-              builder: (_) => ValueListenableBuilder<int>(
-                valueListenable: _detailPageRevision,
-                builder: (context, _, _) => _buildTextView(text),
-              ),
-            ),
-          )
-          .whenComplete(() => {})
-        ;
-  }
-
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Uth',
@@ -90,7 +64,7 @@ class _MyAppState extends State<MyApp> {
               onTextDeleted: _deleteText,
               detailPageRevision: _detailPageRevision,
               onErrorChanged: (error) => _setState(() => _error = error),
-              onCreateUpdateTranscript: _openText,
+              detailPage: SavedTextPage(),
             ),
 
   );
