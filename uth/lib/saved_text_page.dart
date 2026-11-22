@@ -15,12 +15,14 @@ class SavedTextPage extends StatefulWidget {
   const SavedTextPage({
     super.key,
     required this.darkMode,
+    required this text,
     required this.onBack,
     required this.onAddTranscript,
   });
 
   
   final bool darkMode;
+  final SavedText text;
   final VoidCallback onBack;
   final void Function (SavedText) onAddTranscript;
 
@@ -71,9 +73,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-var text = ModalRoute.of(context)!.settings.arguments as SavedText;
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       leading: IconButton(
         tooltip: 'Back to texts',
@@ -90,7 +90,7 @@ var text = ModalRoute.of(context)!.settings.arguments as SavedText;
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(
                   children: [
-                    if (text.transcript.isNotEmpty)
+                    if (widget.text.transcript.isNotEmpty)
                       Expanded(
                         child: SwitchListTile(
                           dense: true,
@@ -116,8 +116,8 @@ var text = ModalRoute.of(context)!.settings.arguments as SavedText;
                           _setState(() {
                             _splitParagraphs = splitParagraphs;
                             _updateComparisonText(
-                              text.content,
-                              text.transcript,
+                             widget.text.content,
+                             widget.text.transcript,
                             );
                             _selection = null;
                           });
@@ -373,6 +373,7 @@ var text = ModalRoute.of(context)!.settings.arguments as SavedText;
       _error = null;
     });
     try {
+      final text = widget text;
       await _stopPlayback();
       final result = await _transcribe(file);
       if (!mounted) return;
