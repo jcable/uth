@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uth/main.dart';
 import 'package:uth/text_classes.dart';
 import 'package:uth/text_spans.dart';
-import 'package:uth/transcribe_page.dart';
+import 'package:uth/saved_text_page.dart';
 import 'package:uth/saved_texts_page.dart';
 
 const original = """
@@ -576,7 +576,7 @@ Future<void> _pumpApp(
   Widget? app,
 }) async {
   await tester.pumpWidget(
-    app ?? MyApp(documentsDirectoryProvider: () async => documentsDirectory),
+    app ?? MyApp(),
   );
   for (
     var attempt = 0;

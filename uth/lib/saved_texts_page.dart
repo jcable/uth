@@ -22,11 +22,9 @@ class SavedTextsPage extends StatelessWidget {
     required this.onErrorDismissed,
     required this.onAddText,
     required this.onUpdateText,
-    required this.onSelectedTextChanged,
     required this.detailPageRevision,
-    required this.textPageBuilder,
     required this.onErrorChanged,
-    required this.onTextsChanged,
+    required this.onCreateUpdateTranscript,
   });
 
   final List<SavedText> texts;
@@ -36,11 +34,9 @@ class SavedTextsPage extends StatelessWidget {
   final VoidCallback onErrorDismissed;
   final Future<void> Function(SavedText) onAddText;
   final Future<void> Function(SavedText) onUpdateText;
-  final ValueChanged<SavedText?> onSelectedTextChanged;
+  final Future<void> Function(SavedText) onCreateUpdateTranscript;
   final ValueListenable<int> detailPageRevision;
-  final Widget Function(SavedText) textPageBuilder;
   final ValueChanged<String?> onErrorChanged;
-  final Future<void> Function(List<SavedText>) onTextsChanged;
 
   Future<void> _addText(BuildContext context) async {
     final draft = await showDialog<TextDraft>(
@@ -54,7 +50,7 @@ class SavedTextsPage extends StatelessWidget {
       content: draft.content,
     );
     await onAddText(text);
-    if(context.mounted) _openText(context, text);
+    if(context.mounted) onCreateUpdateTranscript(text);
   }
 
   Future<void> _editText(BuildContext context, SavedText existing) async {
@@ -69,22 +65,6 @@ class SavedTextsPage extends StatelessWidget {
       content: draft.content,
     );
     await onUpdateText(updated);
-  }
-
-  void _openText(BuildContext context, SavedText text) {
-    onSelectedTextChanged(text);
-    unawaited(
-      Navigator.of(context)
-          .push(
-            MaterialPageRoute<void>(
-              builder: (_) => ValueListenableBuilder<int>(
-                valueListenable: detailPageRevision,
-                builder: (context, _, _) => textPageBuilder(text),
-              ),
-            ),
-          )
-          .whenComplete(() => onSelectedTextChanged(null)),
-    );
   }
 
   Future<void> _exportText(BuildContext context, SavedText text) async {
@@ -126,7 +106,6 @@ class SavedTextsPage extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await onTextsChanged(texts.where((item) => item.id != text.id).toList());
   }
 
   @override
@@ -193,7 +172,7 @@ class SavedTextsPage extends StatelessWidget {
                             ? 'No transcript yet'
                             : 'Transcript saved',
                       ),
-                      onTap: () => _openText(context, text),
+                      onTap: () => onCreateUpdateTranscript(text),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
