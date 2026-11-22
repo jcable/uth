@@ -113,7 +113,10 @@ class SavedTextsPage extends StatelessWidget {
 
     final updated = await Navigator.push(
       context,
-      MaterialPageRoute<SavedText>(builder: (context) => SavedTextPage(darkMode, text)),
+      MaterialPageRoute<SavedText>(builder: (context) => SavedTextPage(
+              text: text,
+              darkMode: darkMode,
+      ))
     );
     await onUpdateText(updated!);
   }
