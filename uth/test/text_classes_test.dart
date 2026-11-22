@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uth/text_classes.dart';
 
@@ -52,5 +54,81 @@ void main() {
     expect(step.originalIndex, 3);
     expect(step.transcriptIndex, 5);
   });
+
+  
+  test('saved texts round-trip and retain backward compatibility', () {
+    const savedText = SavedText(
+      id: 'one',
+      name: 'Practice',
+      content: 'Read this.',
+      transcript: 'Read that.',
+    );
+
+    expect(SavedText.fromJson(savedText.toJson()).toJson(), savedText.toJson());
+    expect(
+      SavedText.fromJson(jsonEncode({
+        'id': 'legacy',
+        'name': 'Legacy',
+        'content': 'Old format',
+      })).transcript,
+      isEmpty,
+    );
+    expect(savedText.copyWith(name: 'Updated').toJson(), jsonEncode({
+      'id': 'one',
+      'name': 'Updated',
+      'content': 'Read this.',
+      'transcript': 'Read that.',
+    }));
+  });
+
+  test('comparison reports no differences before a transcript exists', () {
+    final comparison = compareText('Read this original text.', '');
+
+    expect(comparison.matches, isTrue);
+    expect(comparison.differences, isEmpty);
+  });
+
+  test('comparison ignores case, whitespace, and supported punctuation', () {
+    final comparison = compareText(
+      'Hello, world! Are you ready?',
+      'hello  world. Are you ready!',
+    );
+
+    expect(comparison.matches, isTrue);
+  });
+
+  test('comparison returns the recognized text for a discrepancy', () {
+    final comparison = compareText(
+      'Say hello, then go.',
+      'Say goodbye, then go.',
+    );
+
+    expect(comparison.differences, hasLength(1));
+    expect(comparison.differences.single.transcript, 'goodbye,');
+  });
+
+  test('comparison reports deleted and inserted words', () {
+    final deleted = compareText('Say hello, then go.', 'Say then go.');
+    expect(deleted.differences, hasLength(1));
+    expect(deleted.differences.single.transcript, isEmpty);
+
+    final inserted = compareText('Say hello.', 'Say hello there.');
+    expect(inserted.differences, hasLength(1));
+    expect(inserted.differences.single.transcript, 'there.');
+  });
+
+  test('comparison anchors inserted words at their position in the text', () {
+    const text = 'one two three four';
+    final comparison = compareText(text, 'one extra two three another four');
+
+    expect(
+      comparison.differences
+          .map((difference) => text.substring(difference.start, difference.end))
+          .toList(),
+      ['two', 'four'],
+    );
+  });
+
+
 }
 
