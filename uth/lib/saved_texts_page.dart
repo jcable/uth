@@ -9,6 +9,7 @@ import 'about_page.dart';
 import 'settings_page.dart';
 import 'text_classes.dart';
 import 'text_editor.dart';
+import 'saved_text_page.dart';
 
 enum _MenuAction { settings, about }
 
@@ -176,7 +177,7 @@ class SavedTextsPage extends StatelessWidget {
                       ),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<SavedText>(
-                          builder: (context) => detailsScreen(darkMode, text),
+                          builder: (context) => SavedTextPage(darkMode, text),
                         ),
                       ),
                       trailing: Row(
