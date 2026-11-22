@@ -90,7 +90,7 @@ var text = ModalRoute.of(context)!.settings.arguments as SavedText;
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(
                   children: [
-                    if (widget.text.transcript.isNotEmpty)
+                    if (text.transcript.isNotEmpty)
                       Expanded(
                         child: SwitchListTile(
                           dense: true,
