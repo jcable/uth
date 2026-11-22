@@ -51,9 +51,6 @@ class _SavedTextPageState extends State<SavedTextPage> {
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
-  var text = ModalRoute.of(context)!.settings.arguments  as SavedText;
-
-
   @override
   void initState() {
     super.initState();
@@ -74,7 +71,9 @@ class _SavedTextPageState extends State<SavedTextPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+var text = ModalRoute.of(context)!.settings.arguments as SavedText;
+    return Scaffold(
     appBar: AppBar(
       leading: IconButton(
         tooltip: 'Back to texts',
@@ -258,6 +257,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
         ],
       ),
   );
+}
 
   void _setState(VoidCallback callback) {
     setState(callback);
