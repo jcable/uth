@@ -175,11 +175,8 @@ class SavedTextsPage extends StatelessWidget {
                             : 'Transcript saved',
                       ),
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) async => detailsScreen(text),
-                          settings: RouteSettings(
-                            arguments: text
-                          )
+                        MaterialPageRoute<SavedText>(
+                          builder: (context) => detailsScreen(text),
                         ),
                       ),
                       trailing: Row(
