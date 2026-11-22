@@ -73,7 +73,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
     appBar: AppBar(
       leading: IconButton(
         tooltip: 'Back to texts',
-        onPressed: () { Navigator.pop(context, widget.text) },
+        onPressed: () { Navigator.pop(context, widget.text); },
         icon: const Icon(Icons.arrow_back),
       ),
       title: Text(widget.text.name, maxLines: 1, overflow: TextOverflow.ellipsis),
