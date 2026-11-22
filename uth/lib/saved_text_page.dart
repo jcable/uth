@@ -365,7 +365,6 @@ var text = ModalRoute.of(context)!.settings.arguments as SavedText;
 
   Future<void> _transcribeRecording() async {
     final path = _pendingAudioPath;
-    final text = widget.text;
     if (path == null) return;
     final recordingSelection = _recordingSelection;
     final file = File(path);
