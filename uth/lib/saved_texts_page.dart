@@ -26,7 +26,6 @@ class SavedTextsPage extends StatelessWidget {
     required this.onUpdateText,
     required this.detailPageRevision,
     required this.onErrorChanged,
-    required this.detailsScreen,
   });
 
   final List<SavedText> texts;
@@ -36,7 +35,6 @@ class SavedTextsPage extends StatelessWidget {
   final VoidCallback onErrorDismissed;
   final Future<void> Function(SavedText) onAddText;
   final Future<void> Function(SavedText) onUpdateText;
-  final Widget detailsScreen;
    final Future<void> Function(SavedText) onTextDeleted;
   final ValueListenable<int> detailPageRevision;
   final ValueChanged<String?> onErrorChanged;
@@ -112,12 +110,10 @@ class SavedTextsPage extends StatelessWidget {
   }
 
   Future<void> _navigateAndDisplaySelection(BuildContext context, SavedText text) async {
-    // Navigator.push returns a Future that completes after calling
-    // Navigator.pop on the Selection Screen.
+
     final updated = await Navigator.push(
       context,
-      // Create the SelectionScreen in the next step.
-      MaterialPageRoute<SavedText>(builder: (context) => const SavedTextPage(darkMode, text),
+      MaterialPageRoute<SavedText>(builder: (context) => const SavedTextPage(darkMode, text)),
     );
     await onUpdateText(updated);
   }
