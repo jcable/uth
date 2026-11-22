@@ -111,6 +111,16 @@ class SavedTextsPage extends StatelessWidget {
     await onTextDeleted(text);
   }
 
+  Future<void> _navigateAndDisplaySelection(BuildContext context) async {
+    // Navigator.push returns a Future that completes after calling
+    // Navigator.pop on the Selection Screen.
+    final result = await Navigator.push(
+      context,
+      // Create the SelectionScreen in the next step.
+      MaterialPageRoute<SavedText>(builder: (context) => const SavedTextPage(darkMode, text),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -175,11 +185,9 @@ class SavedTextsPage extends StatelessWidget {
                             ? 'No transcript yet'
                             : 'Transcript saved',
                       ),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<SavedText>(
-                          builder: (context) => SavedTextPage(darkMode, text),
-                        ),
-                      ),
+                      onTap: (context) {
+_navigateAndDisplaySelection(context);
+                      },
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
