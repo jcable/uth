@@ -16,16 +16,12 @@ class SavedTextPage extends StatefulWidget {
     super.key,
     required this.darkMode,
     required this.text,
-    required this.onBack,
-    required this.onAddTranscript,
   });
 
   
   final bool darkMode;
   final SavedText text;
-  final VoidCallback onBack;
-  final void Function (SavedText) onAddTranscript;
-
+  
   @override
   State<SavedTextPage> createState() => _SavedTextPageState();
 }
@@ -77,7 +73,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
     appBar: AppBar(
       leading: IconButton(
         tooltip: 'Back to texts',
-        onPressed: widget.onBack,
+        onPressed: Navigator.pop(context, widget.text);,
         icon: const Icon(Icons.arrow_back),
       ),
       title: Text(widget.text.name, maxLines: 1, overflow: TextOverflow.ellipsis),
