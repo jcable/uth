@@ -231,7 +231,7 @@ var text = ModalRoute.of(context)!.settings.arguments as SavedText;
                                     : null,
                               ),
                         icon: const Icon(Icons.mic),
-                        label: Text(recordLabel(widget.text, _selection)),
+                        label: Text(recordLabel(text, _selection)),
                       ),
                     ],
                   ),
