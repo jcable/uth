@@ -185,7 +185,7 @@ class SavedTextsPage extends StatelessWidget {
                             ? 'No transcript yet'
                             : 'Transcript saved',
                       ),
-                      onTap: (context) {
+                      onTap: () {
 _navigateAndDisplaySelection(context);
                       },
                       trailing: Row(
