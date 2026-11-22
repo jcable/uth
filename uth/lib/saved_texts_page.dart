@@ -21,6 +21,7 @@ class SavedTextsPage extends StatelessWidget {
     required this.onDarkModeChanged,
     required this.onErrorDismissed,
     required this.onAddText,
+    required this.onTextDeleted,
     required this.onUpdateText,
     required this.detailPageRevision,
     required this.onErrorChanged,
@@ -35,6 +36,7 @@ class SavedTextsPage extends StatelessWidget {
   final Future<void> Function(SavedText) onAddText;
   final Future<void> Function(SavedText) onUpdateText;
   final Future<void> Function(SavedText) onCreateUpdateTranscript;
+   final Future<void> Function(SavedText) onTextDeleted;
   final ValueListenable<int> detailPageRevision;
   final ValueChanged<String?> onErrorChanged;
 
@@ -106,6 +108,7 @@ class SavedTextsPage extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
+    await onTextDeleted(text);
   }
 
   @override

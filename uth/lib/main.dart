@@ -87,6 +87,7 @@ class _MyAppState extends State<MyApp> {
               onErrorDismissed: () => _setState(() => _error = null),
               onAddText: _addText,
               onUpdateText: _updateText,
+              onTextDeleted: _deleteText,
               detailPageRevision: _detailPageRevision,
               onErrorChanged: (error) => _setState(() => _error = error),
               onCreateUpdateTranscript: _openText,
@@ -110,6 +111,15 @@ class _MyAppState extends State<MyApp> {
     _setState(() {
       _texts = _texts
           .map((text) => text.id == updated.id ? updated : text)
+          .toList();
+    });
+    await saveTexts(_texts);
+  }
+
+  Future<void> _deleteText(SavedText deleted) async {
+    _setState(() {
+      _texts = _texts
+          .where((text) => text.id != deleted.id)
           .toList();
     });
     await saveTexts(_texts);
