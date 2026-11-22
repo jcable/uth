@@ -9,7 +9,6 @@ void main() {
     tester,
   ) async {
     const difference = TextDifference(start: 3, end: 7, transcript: 'love');
-    TextDifference? tappedDifference;
     TextSelection? selectedText;
     await tester.pumpWidget(
       MaterialApp(

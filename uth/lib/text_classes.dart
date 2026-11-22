@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 enum Edit { equal, substitute, delete, insert }
 
 class SavedText {
@@ -21,19 +23,22 @@ class SavedText {
         transcript: transcript ?? this.transcript,
       );
 
-  Map<String, Object?> toJson() => {
+  String toJson() => jsonEncode({
     'id': id,
     'name': name,
     'content': content,
     'transcript': transcript,
-  };
+  });
 
-  factory SavedText.fromJson(Map<String, dynamic> json) => SavedText(
+  factory SavedText.fromJson(String s) {
+    final json = jsonDecode(s);
+    return SavedText(
     id: json['id'] as String,
     name: json['name'] as String,
     content: json['content'] as String,
     transcript: json['transcript'] as String? ?? '',
   );
+  }
 }
 
 class TextDifference {
