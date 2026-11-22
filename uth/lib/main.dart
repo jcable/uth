@@ -64,7 +64,10 @@ class _MyAppState extends State<MyApp> {
               onTextDeleted: _deleteText,
               detailPageRevision: _detailPageRevision,
               onErrorChanged: (error) => _setState(() => _error = error),
-              detailsScreen: SavedTextPage(_darkMode),
+              detailsScreen: (text) {
+   // required this.onBack,
+  //  required this.onAddTranscript,
+ SavedTextPage(_darkMode, text, 0, 0)},
             ),
 
   );
