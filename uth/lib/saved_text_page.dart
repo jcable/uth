@@ -80,7 +80,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
         onPressed: widget.onBack,
         icon: const Icon(Icons.arrow_back),
       ),
-      title: Text(text.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(widget.text.name, maxLines: 1, overflow: TextOverflow.ellipsis),
     ),
     body: Stack(
         children: [
@@ -231,7 +231,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
                                     : null,
                               ),
                         icon: const Icon(Icons.mic),
-                        label: Text(recordLabel(text, _selection)),
+                        label: Text(recordLabel(widget.text, _selection)),
                       ),
                     ],
                   ),
