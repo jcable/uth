@@ -14,13 +14,12 @@ import 'comparison_text_view.dart';
 class SavedTextPage extends StatefulWidget {
   const SavedTextPage({
     super.key,
-    required this.text,
     required this.darkMode,
     required this.onBack,
     required this.onAddTranscript,
   });
 
-  final SavedText text;
+  
   final bool darkMode;
   final VoidCallback onBack;
   final void Function (SavedText) onAddTranscript;
@@ -52,6 +51,9 @@ class _SavedTextPageState extends State<SavedTextPage> {
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
+  var text = ModalRoute.of(context)!.settings.arguments  as SavedText;
+
+
   @override
   void initState() {
     super.initState();
@@ -79,7 +81,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
         onPressed: widget.onBack,
         icon: const Icon(Icons.arrow_back),
       ),
-      title: Text(widget.text.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(text.name, maxLines: 1, overflow: TextOverflow.ellipsis),
     ),
     body: Stack(
         children: [
@@ -115,8 +117,8 @@ class _SavedTextPageState extends State<SavedTextPage> {
                           _setState(() {
                             _splitParagraphs = splitParagraphs;
                             _updateComparisonText(
-                              widget.text.content,
-                              widget.text.transcript,
+                              text.content,
+                              text.transcript,
                             );
                             _selection = null;
                           });
