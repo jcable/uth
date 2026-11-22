@@ -176,7 +176,7 @@ class SavedTextsPage extends StatelessWidget {
                       ),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => detailsScreen(text),
+                          builder: (context) async => detailsScreen(text),
                           settings: RouteSettings(
                             arguments: text
                           )
