@@ -25,7 +25,7 @@ class SavedTextsPage extends StatelessWidget {
     required this.onUpdateText,
     required this.detailPageRevision,
     required this.onErrorChanged,
-    required this.onCreateUpdateTranscript,
+    required this.detailsScreen,
   });
 
   final List<SavedText> texts;
@@ -35,7 +35,7 @@ class SavedTextsPage extends StatelessWidget {
   final VoidCallback onErrorDismissed;
   final Future<void> Function(SavedText) onAddText;
   final Future<void> Function(SavedText) onUpdateText;
-  final Future<void> Function(SavedText) onCreateUpdateTranscript;
+  final Widget detailsScreen;
    final Future<void> Function(SavedText) onTextDeleted;
   final ValueListenable<int> detailPageRevision;
   final ValueChanged<String?> onErrorChanged;
@@ -52,7 +52,6 @@ class SavedTextsPage extends StatelessWidget {
       content: draft.content,
     );
     await onAddText(text);
-    if(context.mounted) onCreateUpdateTranscript(text);
   }
 
   Future<void> _editText(BuildContext context, SavedText existing) async {
@@ -175,7 +174,14 @@ class SavedTextsPage extends StatelessWidget {
                             ? 'No transcript yet'
                             : 'Transcript saved',
                       ),
-                      onTap: () => onCreateUpdateTranscript(text),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => detailsScreen(),
+                          settings: RouteSettings(
+                            arguments: text
+                          )
+                        ),
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
