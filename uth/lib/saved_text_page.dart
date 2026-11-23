@@ -386,7 +386,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
               result,
             );
       _setState(() {
-        _text.transcript = updatedTranscript;
+        _text = _text.copyWith(transcript: updatedTranscript);
         _updateComparisonText(_text.content, _text.transcript);
         _selection = null;
       });
