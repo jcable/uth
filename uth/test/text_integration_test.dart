@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:uth/main.dart';
+
 void main() {
   
   testWidgets('a named text can be created and opened', (tester) async {
