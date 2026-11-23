@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   
   testWidgets('a named text can be created and opened', (tester) async {
-
+    await tester.pumpWidget(MyApp());
     await tester.tap(find.text('Add text'));
     await tester.pumpAndSettle();
     await tester.enterText(
