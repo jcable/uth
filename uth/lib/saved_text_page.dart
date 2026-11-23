@@ -46,6 +46,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
   final ValueNotifier<int> _detailPageRevision = ValueNotifier<int>(0);
   final verticalPadding = 12.0;
   final buttonPadding = EdgeInsets.fromLTRB(12, 12, 12, 48);
+  SavedText _text = widget.text;
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
@@ -77,7 +78,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
     appBar: AppBar(
       leading: IconButton(
         tooltip: 'Back to texts',
-        onPressed: () { Navigator.pop(context, widget.text); },
+        onPressed: () { Navigator.pop(context, _text); },
         icon: const Icon(Icons.arrow_back),
       ),
       title: Text(widget.text.name, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -116,8 +117,8 @@ class _SavedTextPageState extends State<SavedTextPage> {
                           _setState(() {
                             _splitParagraphs = splitParagraphs;
                             _updateComparisonText(
-                             widget.text.content,
-                             widget.text.transcript,
+                             _text.content,
+                             _text.transcript,
                             );
                             _selection = null;
                           });
@@ -372,22 +373,21 @@ class _SavedTextPageState extends State<SavedTextPage> {
       _error = null;
     });
     try {
-      final text = widget.text;
       await _stopPlayback();
-      final result = await _transcribe(file);
+      final result = await transcribeAudio(file);
       if (!mounted) return;
       final updatedTranscript = recordingSelection == null
           ? result
           : replaceTranscriptForSelection(
-              text.content,
-              text.transcript.isEmpty ? text.content : text.transcript,
+              _text.content,
+              _text.transcript.isEmpty ? _text.content : _text.transcript,
               recordingSelection,
               result,
             );
-      final updated = text.copyWith(transcript: updatedTranscript);
       _setState(() {
-        _updateComparisonText(updated.content, updated.transcript);
+        _updateComparisonText(_text.content, updatedTranscript);
         _selection = null;
+        _text.transcript = updatedTranscript;
       });
     } catch (error) {
       if (mounted) _setState(() => _error = 'Transcription failed: $error');
@@ -401,10 +401,6 @@ class _SavedTextPageState extends State<SavedTextPage> {
         });
       }
     }
-  }
-
-  Future<String> _transcribe(File file) async {
-    return transcribeAudio(file);
   }
 
   void _updateComparisonText(String content, String transcript) {
