@@ -61,7 +61,6 @@ class _MyAppState extends State<MyApp> {
               onAddText: _addText,
               onUpdateText: _updateText,
               onTextDeleted: _deleteText,
-              detailPageRevision: _detailPageRevision,
               onErrorChanged: (error) => _setState(() => _error = error),
             ),
 
