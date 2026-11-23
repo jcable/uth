@@ -13,10 +13,12 @@ class TranscribeWidget extends StatefulWidget {
   const TranscribeWidget({
     super.key,
     required this.recordLabel,
+    required this.onTranscriptionRequested,
     required this.onTranscriptReturned,
   });
 
   final String recordLabel;
+  final Future<void> Function(void) onTranscriptionRequested;
   final Future<void> Function(String) onTranscriptReturned;
 
   @override
@@ -58,23 +60,6 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
   @override
   Widget build(BuildContext context) => Stack(
     children: [
-      if (_transcribing)
-        Positioned.fill(
-          child: ColoredBox(
-            color: Theme.of(context).colorScheme.surface,
-            child: const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 8),
-                  Text('Transcribing…'),
-                ],
-              ),
-            ),
-          ),
-        )
-      else
         Column(
           children: [
             if (_error != null)
@@ -244,6 +229,7 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
     });
     try {
       await _stopPlayback();
+      await widget.onTranscriptionRequested();
       final result = await transcribeAudio(file);
       if (!mounted) return;
       await widget.onTranscriptReturned(result);
