@@ -113,7 +113,7 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
                       label: const Text('Re-record'),
                     ),
                     FilledButton.icon(
-                      onPressed: _transcribeRecording,
+                      onPressed: () => _transcribeRecording(),
                       icon: const Icon(Icons.send),
                       label: const Text('Go'),
                     ),
