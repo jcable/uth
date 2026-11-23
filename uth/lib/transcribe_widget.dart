@@ -246,7 +246,7 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
       await _stopPlayback();
       final result = await transcribeAudio(file);
       if (!mounted) return;
-      widget.onTranscriptReturned!(result);
+      widget.onTranscriptReturned(result);
     } catch (error) {
       if (mounted) _setState(() => _error = 'Transcription failed: $error');
     } finally {
