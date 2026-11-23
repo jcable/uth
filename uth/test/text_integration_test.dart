@@ -237,7 +237,7 @@ void main() {
         (widget) =>
             widget is TextField && widget.decoration?.labelText == 'Name',
       ),
-      'Practice',
+      'export',
     );
     await tester.enterText(
       find.byWidgetPredicate(
@@ -250,9 +250,10 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Save Practice'));
+    await tester.tap(find.byTooltip('Save export'));
     await tester.pumpAndSettle();
-    expect(find.text('Practice.zip'), findsOneWidget);
+    expect(find.text('SAVE'), findsOneWidget);
+    expect(find.text('export.zip'), findsOneWidget);
     await tester.tap(find.text('SAVE'));
     await tester.pumpAndSettle();
 
