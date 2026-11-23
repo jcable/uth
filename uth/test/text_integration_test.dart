@@ -28,6 +28,11 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
+    expect(find.text('No transcript yet'), findsOneWidget);
+
+    await tester.tap(find.text('Practice text'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Practice text'), findsOneWidget);
     expect(find.text('Read this sentence.'), findsOneWidget);
     expect(find.text('Record'), findsOneWidget);
