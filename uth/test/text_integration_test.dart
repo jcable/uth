@@ -253,7 +253,7 @@ void main() {
     await tester.tap(find.byTooltip('Save Practice'));
     await tester.pumpAndSettle();
     expect(find.text('Practice.zip'), findsOneWidget);
-    await tester.tap(find.byTooltip('SAVE'));
+    await tester.tap(find.text('SAVE'));
     await tester.pumpAndSettle();
 
       /* TODO
