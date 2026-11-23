@@ -183,7 +183,7 @@ void main() {
     
     await tester.pumpAndSettle();
     
-    expect(find.text('Practice text'), findsOneWidget);
+    expect(find.text('After'), findsOneWidget);
     expect(find.text('Read the new text.'), findsOneWidget);
   });
 
