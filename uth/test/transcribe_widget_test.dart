@@ -5,7 +5,7 @@ import 'package:uth/transcribe_widget.dart';
   Future<void> _handleTranscript(String transcript) async {
   }
 
-  Future<void> _handleTranscribing() async {
+  Future<void> _handleTranscribing(void) async {
   }
 
 void main() {
