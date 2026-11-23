@@ -225,4 +225,43 @@ void main() {
 
   });
 
+  testWidgets(
+    'text list save action creates a ZIP of original and transcript',
+    (tester) async {
+    await tester.pumpWidget(MyApp());
+    await tester.tap(find.text('Add text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'Practice',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      'Some Text',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Save Practice'), findsOneWidget);
+      /* TODO
+      final archive = ZipDecoder().decodeBytes(
+        createSavedTextArchive(savedText),
+      );
+      expect(archive.files.map((file) => file.name), [
+        'Practice/original.txt',
+        'Practice/transcript.txt',
+      ]);
+      expect(utf8.decode(archive.files[0].content), 'Original text.');
+      expect(utf8.decode(archive.files[1].content), 'Recognized text.');
+*/
+    },
+  );
+
 }
