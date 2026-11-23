@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
 
-import 'saved_text_page.dart';
 import 'saved_texts_page.dart';
 import 'text_classes.dart';
 import 'text_store.dart';

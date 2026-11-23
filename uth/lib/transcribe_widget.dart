@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
-import 'text_classes.dart';
 import 'transcription_service.dart';
 
 class TranscribeWidget extends StatefulWidget {
@@ -17,9 +16,8 @@ class TranscribeWidget extends StatefulWidget {
     required this.onTranscriptReturned,
   });
 
-
   final String recordLabel;
-  final f onTranscriptReturned;
+  final Future<void> Function(String) onTranscriptReturned;
 
   @override
   State<TranscribeWidget> createState() => _TranscribeWidgetState();
@@ -59,92 +57,87 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
 
   @override
   Widget build(BuildContext context) => Stack(
-        children: [
-          Column(
-            children: [
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
-              if (_recording)
-                Padding(
-                  padding: buttonPadding,
-                  child: FilledButton.icon(
-                    onPressed: _stopRecording,
-                    icon: const Icon(Icons.stop),
-                    label: const Text('Stop recording'),
-                  ),
-                )
-              else if (_pendingAudioPath != null && !_transcribing)
-                Padding(
-                  padding: buttonPadding,
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _togglePlayback,
-                        icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
-                        label: Text(_playing ? 'Pause playback' : 'Play'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          await _startRecording();
-                        },
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Re-record'),
-                      ),
-                      FilledButton.icon(
-                        onPressed: _transcribeRecording,
-                        icon: const Icon(Icons.send),
-                        label: const Text('Go'),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Padding(
-                  padding: buttonPadding,
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: _transcribing
-                            ? null
-                            : () => _startRecording(),
-                        icon: const Icon(Icons.mic),
-                        label: Text(widget.recordLabel),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          if (_transcribing)
-            Positioned.fill(
-              child: ColoredBox(
-                color: Theme.of(context).colorScheme.surface,
-                child: const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 8),
-                      Text('Transcribing…'),
-                    ],
-                  ),
-                ),
+    children: [
+      if (_transcribing)
+        Positioned.fill(
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surface,
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 8),
+                  Text('Transcribing…'),
+                ],
               ),
             ),
-        ],
+          ),
+        )
+      else
+        Column(
+          children: [
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            if (_recording)
+              Padding(
+                padding: buttonPadding,
+                child: FilledButton.icon(
+                  onPressed: _stopRecording,
+                  icon: const Icon(Icons.stop),
+                  label: const Text('Stop recording'),
+                ),
+              )
+            else if (_pendingAudioPath != null)
+              Padding(
+                padding: buttonPadding,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _togglePlayback,
+                      icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
+                      label: Text(_playing ? 'Pause playback' : 'Play'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _startRecording(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Re-record'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: _transcribeRecording,
+                      icon: const Icon(Icons.send),
+                      label: const Text('Go'),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: buttonPadding,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => _startRecording(),
+                      icon: const Icon(Icons.mic),
+                      label: Text(widget.recordLabel),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+    ],
   );
 
   void _setState(VoidCallback callback) {
@@ -158,6 +151,10 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
         _setState(() => _error = 'Microphone permission denied');
         return;
       }
+      _setState(() {
+        _recording = true;
+        _error = null;
+      });
       final directory = await getTemporaryDirectory();
       final path =
           '${directory.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
@@ -171,10 +168,6 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
         path: path,
       );
       if (!mounted) return;
-      _setState(() {
-        _recording = true;
-        _error = null;
-      });
     } catch (error) {
       if (mounted) {
         _setState(() => _error = 'Could not start recording: $error');
@@ -253,7 +246,7 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
       await _stopPlayback();
       final result = await transcribeAudio(file);
       if (!mounted) return;
-      await widget.onTranscriptReturned(result);
+      widget.onTranscriptReturned!(result);
     } catch (error) {
       if (mounted) _setState(() => _error = 'Transcription failed: $error');
     } finally {
@@ -261,7 +254,6 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
       if (mounted) {
         _setState(() {
           _pendingAudioPath = null;
-          _recordingSelection = null;
           _transcribing = false;
         });
       }

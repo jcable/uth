@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:archive/archive.dart';
 
 import 'package:uth/main.dart';
 
@@ -270,5 +269,44 @@ void main() {
 */
     },
   );
+
+  testWidgets('sentence splitting separates original text into paragraphs', (
+    tester,
+  ) async {
+    await tester.pumpWidget(MyApp());
+    await tester.tap(find.text('Add text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'Sentences',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      'A chiad sentans. An darna sentans.',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sentences'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('One sentence per paragraph'));
+    await tester.pumpAndSettle();
+
+    final selectable = tester.widget<SelectableText>(
+      find.byType(SelectableText),
+    );
+    expect(
+      selectable.textSpan!.toPlainText(),
+      'A chiad sentans.\n\nAn darna sentans.',
+    );
+  });
 
 }

@@ -1,13 +1,9 @@
-import 'dart:convert';
-
-import 'package:archive/archive.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uth/main.dart';
 import 'package:uth/text_classes.dart';
-import 'package:uth/saved_texts_page.dart';
 import 'package:uth/text_store.dart';
 
 void main() {
@@ -105,32 +101,6 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
-  });
-
-  testWidgets('sentence splitting separates original text into paragraphs', (
-    tester,
-  ) async {
-    const savedText = SavedText(
-      id: 'split-sentences',
-      name: 'Sentences',
-      content: 'First sentence. Second sentence!',
-      transcript: 'First sentence. Second sentence!',
-    );
-    await saveTexts([savedText]);
-    await _pumpApp(tester);
-    await tester.tap(find.text('Sentences'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('One sentence per paragraph'));
-    await tester.pumpAndSettle();
-
-    final selectable = tester.widget<SelectableText>(
-      find.byType(SelectableText),
-    );
-    expect(
-      selectable.textSpan!.toPlainText(),
-      'First sentence.\n\nSecond sentence!',
-    );
   });
 
   testWidgets('long pressing a difference opens its detail popup', (
