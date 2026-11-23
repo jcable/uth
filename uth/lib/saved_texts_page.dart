@@ -24,7 +24,6 @@ class SavedTextsPage extends StatelessWidget {
     required this.onAddText,
     required this.onTextDeleted,
     required this.onUpdateText,
-    required this.detailPageRevision,
     required this.onErrorChanged,
   });
 
@@ -36,7 +35,6 @@ class SavedTextsPage extends StatelessWidget {
   final Future<void> Function(SavedText) onAddText;
   final Future<void> Function(SavedText) onUpdateText;
    final Future<void> Function(SavedText) onTextDeleted;
-  final ValueListenable<int> detailPageRevision;
   final ValueChanged<String?> onErrorChanged;
 
   Future<void> _addText(BuildContext context) async {
