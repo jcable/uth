@@ -28,6 +28,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
   final verticalPadding = 12.0;
   final buttonPadding = EdgeInsets.fromLTRB(12, 12, 12, 48);
   late SavedText _text;
+  bool _transcribing = false;
 
   @override
   void initState() {
@@ -149,6 +150,22 @@ class _SavedTextPageState extends State<SavedTextPage> {
             ),
           ],
         ),
+        if (_transcribing)
+          Positioned.fill(
+            child: ColoredBox(
+              color: Theme.of(context).colorScheme.surface,
+              child: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 8),
+                    Text('Transcribing…'),
+                  ],
+                ),
+              ),
+            ),
+         ),
       ],
     ),
   );
