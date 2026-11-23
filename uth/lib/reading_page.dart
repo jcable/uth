@@ -67,7 +67,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
               padding: const EdgeInsets.only(top: 8),
               child: Row(
                 children: [
-                  if (widget.text.transcript.isNotEmpty)
+                  if (_text.transcript.isNotEmpty)
                     Expanded(
                       child: SwitchListTile(
                         dense: true,
