@@ -18,7 +18,7 @@ class TranscribeWidget extends StatefulWidget {
   });
 
   final String recordLabel;
-  final Future<void> Function(void) onTranscriptionRequested;
+  final Future<void> Function() onTranscriptionRequested;
   final Future<void> Function(String) onTranscriptReturned;
 
   @override
