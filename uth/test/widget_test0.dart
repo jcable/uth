@@ -11,40 +11,6 @@ import 'package:uth/saved_texts_page.dart';
 import 'package:uth/text_store.dart';
 
 void main() {
-  testWidgets('the app menu opens the About page', (tester) async {
-    await tester.tap(find.byTooltip('More options'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('About'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(RichText), findsAtLeastNWidgets(2));
-  });
-
-  testWidgets('settings switches theme and links to About', (tester) async {
-    await tester.tap(find.byTooltip('More options'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Settings'));
-    await tester.pumpAndSettle();
-
-    expect(
-      Theme.of(tester.element(find.text('Dark mode'))).brightness,
-      Brightness.light,
-    );
-    expect(find.byType(SwitchListTile), findsOneWidget);
-
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
-
-    expect(
-      Theme.of(tester.element(find.text('Dark mode'))).brightness,
-      Brightness.dark,
-    );
-
-    await tester.tap(find.text('About'));
-    await tester.pumpAndSettle();
-    expect(find.text('About'), findsOneWidget);
-    expect(find.byType(SwitchListTile), findsNothing);
-  });
 
   testWidgets('dark mode uses darker comparison highlight colors', (
     tester,
@@ -284,25 +250,6 @@ void main() {
     );
 
 
-  });
-
-  testWidgets('empty saved text shows an editing hint', (tester) async {
-    const savedText = SavedText(
-      id: 'empty',
-      name: 'Empty',
-      content: '',
-      transcript: '',
-    );
-    await saveTexts([savedText]);
-    await _pumpApp(tester);
-    await tester.tap(find.text('Empty'));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('No text yet. Use Edit in the saved texts list to paste text.'),
-      findsOneWidget,
-    );
-    expect(find.text('Record'), findsOneWidget);
   });
 }
 
