@@ -146,6 +146,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
               ),
             TranscribeWidget(
               recordLabel: recordLabel(_text, _selection),
+              onTranscriptionRequested: _handleTranscribing, 
               onTranscriptReturned: _handleTranscript,
             ),
           ],
@@ -183,6 +184,12 @@ class _SavedTextPageState extends State<SavedTextPage> {
         : 'Record selected';
   }
 
+  Future<void> _handleTranscribing() async {
+    _setState(() {
+      _transcribing = true;
+    });
+  }
+
   Future<void> _handleTranscript(String transcript) async {
     if (!mounted) return;
     final updatedTranscript = _selection == null
@@ -197,6 +204,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
       _text = _text.copyWith(transcript: updatedTranscript);
       _updateComparisonText(_text.content, _text.transcript);
       _selection = null;
+      _transcribing = false;
     });
   }
 
