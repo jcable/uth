@@ -102,4 +102,25 @@ void main() {
     expect(find.byType(SwitchListTile), findsNothing);
   });
 
+  testWidgets('empty saved text shows an editing hint', (tester) async {
+    const savedText = SavedText(
+      id: 'empty',
+      name: 'Empty',
+      content: '',
+      transcript: '',
+    );
+    await saveTexts([savedText]);
+    await tester.pumpWidget(MyApp());
+    await tester.tap(find.text('Empty'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('No text yet. Use Edit in the saved texts list to paste text.'),
+      findsOneWidget,
+    );
+    expect(find.text('Record'), findsOneWidget);
+  });
+}
+
+
 }
