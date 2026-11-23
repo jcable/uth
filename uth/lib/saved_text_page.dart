@@ -46,7 +46,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
   final ValueNotifier<int> _detailPageRevision = ValueNotifier<int>(0);
   final verticalPadding = 12.0;
   final buttonPadding = EdgeInsets.fromLTRB(12, 12, 12, 48);
-  var _text = SavedText('', '', '');
+  late SavedText _text;
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
