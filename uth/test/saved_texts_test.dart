@@ -10,7 +10,6 @@ import 'package:uth/saved_texts_page.dart';
 const String error = '';
 
 void onErrorChanged(String? value) {}
-var detailPageRevision = ValueNotifier<int>(0);
 Future<void> onUpdateText(SavedText text) async {}
 void onDarkModeChanged(Object? value) {}
 Future<void> onAddText(SavedText text) async {}
@@ -39,7 +38,6 @@ MaterialApp makeApp(SavedText text, {bool darkMode = false}) {
         onAddText: onAddText,
         onTextDeleted: onTextDeleted,
         onUpdateText: onUpdateText,
-        detailPageRevision: detailPageRevision,
         onErrorChanged: onErrorChanged,
       ),
     ),
