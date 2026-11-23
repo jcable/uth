@@ -133,4 +133,96 @@ void main() {
     expect(find.text('Record'), findsOneWidget);
   });
 
+  testWidgets('editing saved text updates persistent storage', (
+    tester,
+  ) async {
+    
+    await tester.pumpWidget(MyApp());
+    await tester.tap(find.text('Add text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'Before',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      'Some Text',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Edit Before'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'After',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      'Read the new text.',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Before'), findsNothing);
+
+    await tester.tap(find.text('After'));
+    
+    await tester.pumpAndSettle();
+    
+    expect(find.text('Practice text'), findsOneWidget);
+    expect(find.text('Read the new text.'), findsOneWidget);
+  });
+
+  testWidgets('deleting saved text updates persistent storage', (
+    tester,
+  ) async {
+    
+    await tester.pumpWidget(MyApp());
+    await tester.tap(find.text('Add text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'Script',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      'Some Text',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Delete Script'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Script'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Delete Script'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Script'), findsNothing);
+
+  });
+
 }
