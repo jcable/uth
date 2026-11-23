@@ -46,7 +46,7 @@ class _SavedTextPageState extends State<SavedTextPage> {
   final ValueNotifier<int> _detailPageRevision = ValueNotifier<int>(0);
   final verticalPadding = 12.0;
   final buttonPadding = EdgeInsets.fromLTRB(12, 12, 12, 48);
-  SavedText _text = widget.text;
+  final _text = widget.text;
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
@@ -385,9 +385,9 @@ class _SavedTextPageState extends State<SavedTextPage> {
               result,
             );
       _setState(() {
-        _updateComparisonText(_text.content, updatedTranscript);
-        _selection = null;
         _text.transcript = updatedTranscript;
+        _updateComparisonText(_text.content, _text.transcript);
+        _selection = null;
       });
     } catch (error) {
       if (mounted) _setState(() => _error = 'Transcription failed: $error');
