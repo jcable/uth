@@ -4,8 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:uth/main.dart';
-import 'package:uth/text_classes.dart';
-import 'package:uth/text_store.dart';
 
 void main() {
 
@@ -105,14 +103,26 @@ void main() {
   });
 
   testWidgets('empty saved text shows an editing hint', (tester) async {
-    const savedText = SavedText(
-      id: 'empty',
-      name: 'Empty',
-      content: '',
-      transcript: '',
-    );
-    await saveTexts([savedText]);
     await tester.pumpWidget(MyApp());
+    await tester.tap(find.text('Add text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'Empty',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      '',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Empty'));
     await tester.pumpAndSettle();
 
