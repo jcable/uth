@@ -21,7 +21,6 @@ class _SavedTextPageState extends State<SavedTextPage> {
   // Paragraph formatting inserts newlines, so map displayed selections to source offsets.
   List<int> _comparisonSourceOffsets = const [0];
   TextSelection? _selection;
-  TextSelection? _recordingSelection;
   TextComparison _comparison = const TextComparison([]);
   bool _showTranscript = true;
   bool _splitParagraphs = false;
@@ -169,12 +168,12 @@ class _SavedTextPageState extends State<SavedTextPage> {
 
   Future<void> _handleTranscript(String transcript) async {
     if (!mounted) return;
-    final updatedTranscript = _recordingSelection == null
+    final updatedTranscript = _selection == null
         ? transcript
         : replaceTranscriptForSelection(
             _text.content,
             _text.transcript.isEmpty ? _text.content : _text.transcript,
-            _recordingSelection!,
+            _selection!,
             transcript,
           );
     _setState(() {
