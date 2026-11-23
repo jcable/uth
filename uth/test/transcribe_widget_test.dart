@@ -5,13 +5,20 @@ import 'package:uth/transcribe_widget.dart';
   Future<void> _handleTranscript(String transcript) async {
   }
 
+  Future<void> _handleTranscribing() async {
+  }
+
 void main() {
   testWidgets('records and plays audio', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData.dark(),
         home: const Scaffold(
-          body: TranscribeWidget(recordLabel: 'Record', onTranscriptReturned: _handleTranscript ),
+          body: TranscribeWidget(
+                  recordLabel: 'Record',
+                  onTranscriptionRequested: _handleTranscribing,
+                  onTranscriptReturned: _handleTranscript,
+                ),
         ),
       ),
     );
