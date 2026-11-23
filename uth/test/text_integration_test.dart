@@ -65,4 +65,41 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('the app menu opens the About page', (tester) async {
+    await tester.pumpWidget(MyApp());
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RichText), findsAtLeastNWidgets(2));
+  });
+
+  testWidgets('settings switches theme and links to About', (tester) async {
+    await tester.pumpWidget(MyApp());
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    expect(
+      Theme.of(tester.element(find.text('Dark mode'))).brightness,
+      Brightness.light,
+    );
+    expect(find.byType(SwitchListTile), findsOneWidget);
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+
+    expect(
+      Theme.of(tester.element(find.text('Dark mode'))).brightness,
+      Brightness.dark,
+    );
+
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+    expect(find.text('About'), findsOneWidget);
+    expect(find.byType(SwitchListTile), findsNothing);
+  });
+
 }
