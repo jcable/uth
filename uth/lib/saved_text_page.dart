@@ -52,6 +52,10 @@ class _SavedTextPageState extends State<SavedTextPage> {
   @override
   void initState() {
     super.initState();
+    _updateComparisonText(
+      widget.text.content,
+      widget.text.transcript,
+    );
   }
 
   @override
