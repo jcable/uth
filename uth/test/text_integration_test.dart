@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:archive/archive.dart';
 
 import 'package:uth/main.dart';
 
@@ -249,7 +250,12 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Save Practice'), findsOneWidget);
+    await tester.tap(find.byTooltip('Save Practice'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+
       /* TODO
       final archive = ZipDecoder().decodeBytes(
         createSavedTextArchive(savedText),
