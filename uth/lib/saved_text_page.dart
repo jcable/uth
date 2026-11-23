@@ -46,13 +46,14 @@ class _SavedTextPageState extends State<SavedTextPage> {
   final ValueNotifier<int> _detailPageRevision = ValueNotifier<int>(0);
   final verticalPadding = 12.0;
   final buttonPadding = EdgeInsets.fromLTRB(12, 12, 12, 48);
-  final _text = widget.text;
+  var _text = SavedText('', '');
 
   AudioRecorder get _audioRecorder => _recorder ??= AudioRecorder();
 
   @override
   void initState() {
     super.initState();
+    _text = widget.text;
     _updateComparisonText(
       widget.text.content,
       widget.text.transcript,
