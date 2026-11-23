@@ -10,7 +10,7 @@ import 'package:uth/saved_texts_page.dart';
 const String error = '';
 
 void onErrorChanged(String? value) {}
-ValueListenable<int> detailPageRevision = ValueNotifier<int>(0);
+var detailPageRevision = ValueNotifier<int>(0);
 Future<void> onUpdateText(SavedText text) async {}
 void onDarkModeChanged(Object? value) {}
 Future<void> onAddText(SavedText text) async {}
