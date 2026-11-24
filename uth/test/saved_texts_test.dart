@@ -27,11 +27,11 @@ MaterialApp makeApp(SavedText text, {bool darkMode = false}) {
       brightness: Brightness.dark,
       useMaterial3: true,
     ),
+    themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
     home: Scaffold(
       body: SavedTextsPage(
         texts: [text],
         error: error,
-        darkMode: darkMode,
         onDarkModeChanged: onDarkModeChanged,
         onErrorDismissed: onErrorDismissed,
         onAddText: onAddText,
@@ -72,9 +72,7 @@ void main() {
     expect(spans.singleWhere((span) => span.text == 'love').style?.backgroundColor, Colors.red.shade100);
   });
 
-  testWidgets(
-    skip: false,
-    'dark mode uses darker comparison highlight colors',
+  testWidgets('dark mode uses darker comparison highlight colors',
     (tester) async {
     const savedText = SavedText(
       id: 'dark-comparison',
@@ -94,14 +92,8 @@ void main() {
         .textSpan!
         .children!
         .whereType<TextSpan>();
-    expect(
-      spans.singleWhere((span) => span.text == 'like').style?.backgroundColor,
-      Colors.green.shade900,
-    );
-    expect(
-      spans.singleWhere((span) => span.text == 'love').style?.backgroundColor,
-      Colors.red.shade900,
-    );
+    expect(spans.singleWhere((span) => span.text == 'like').style?.backgroundColor, Colors.green.shade900);
+    expect(spans.singleWhere((span) => span.text == 'love').style?.backgroundColor, Colors.red.shade900);
   });
 
   testWidgets('comparison views show original and transcript differences', (

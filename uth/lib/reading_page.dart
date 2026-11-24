@@ -6,17 +6,16 @@ import 'text_classes.dart';
 import 'comparison_text_view.dart';
 import 'transcribe_widget.dart';
 
-class SavedTextPage extends StatefulWidget {
-  const SavedTextPage({super.key, required this.darkMode, required this.text});
+class ReadingPage extends StatefulWidget {
+  const ReadingPage({super.key, required this.text});
 
-  final bool darkMode;
   final SavedText text;
 
   @override
-  State<SavedTextPage> createState() => _SavedTextPageState();
+  State<ReadingPage> createState() => _ReadingPageState();
 }
 
-class _SavedTextPageState extends State<SavedTextPage> {
+class _ReadingPageState extends State<ReadingPage> {
   String _comparisonText = '';
   // Paragraph formatting inserts newlines, so map displayed selections to source offsets.
   List<int> _comparisonSourceOffsets = const [0];
@@ -33,7 +32,8 @@ class _SavedTextPageState extends State<SavedTextPage> {
   @override
   void initState() {
     super.initState();
-    _text = widget.text;
+    _text = 
+    widget.text;
     _updateComparisonText(widget.text.content, widget.text.transcript);
   }
 

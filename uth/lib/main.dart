@@ -55,7 +55,6 @@ class _MyAppState extends State<MyApp> {
           : SavedTextsPage(
               texts: _texts,
               error: _error,
-              darkMode: _darkMode,
               onDarkModeChanged: (value) => setState(() => _darkMode = value),
               onErrorDismissed: () => _setState(() => _error = null),
               onAddText: _addText,

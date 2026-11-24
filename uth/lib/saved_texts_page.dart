@@ -18,7 +18,6 @@ class SavedTextsPage extends StatelessWidget {
     super.key,
     required this.texts,
     required this.error,
-    required this.darkMode,
     required this.onDarkModeChanged,
     required this.onErrorDismissed,
     required this.onAddText,
@@ -29,12 +28,11 @@ class SavedTextsPage extends StatelessWidget {
 
   final List<SavedText> texts;
   final String? error;
-  final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onErrorDismissed;
   final Future<void> Function(SavedText) onAddText;
   final Future<void> Function(SavedText) onUpdateText;
-   final Future<void> Function(SavedText) onTextDeleted;
+  final Future<void> Function(SavedText) onTextDeleted;
   final ValueChanged<String?> onErrorChanged;
 
   Future<void> _addText(BuildContext context) async {
@@ -57,7 +55,9 @@ class SavedTextsPage extends StatelessWidget {
       builder: (context) => TextEditorDialog(existing: existing),
     );
     if (draft == null) return;
-    if (draft.name == existing.name && draft.content == existing.content) return;
+    if (draft.name == existing.name && draft.content == existing.content) {
+      return;
+    }
     SavedText updated = existing.copyWith(
       name: draft.name,
       content: draft.content,
@@ -107,14 +107,15 @@ class SavedTextsPage extends StatelessWidget {
     await onTextDeleted(text);
   }
 
-  Future<void> _navigateAndDisplaySelection(BuildContext context, SavedText text) async {
-
+  Future<void> _navigateAndDisplaySelection(
+    BuildContext context,
+    SavedText text,
+  ) async {
     final updated = await Navigator.push(
       context,
-      MaterialPageRoute<SavedText>(builder: (context) => SavedTextPage(
-              text: text,
-              darkMode: darkMode,
-      ))
+      MaterialPageRoute<SavedText>(
+        builder: (context) => ReadingPage(text: text),
+      ),
     );
     await onUpdateText(updated!);
   }
@@ -132,7 +133,6 @@ class SavedTextsPage extends StatelessWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => SettingsPage(
-                      darkMode: darkMode,
                       onDarkModeChanged: onDarkModeChanged,
                     ),
                   ),
@@ -183,9 +183,7 @@ class SavedTextsPage extends StatelessWidget {
                             ? 'No transcript yet'
                             : 'Transcript saved',
                       ),
-                      onTap: () {
-_navigateAndDisplaySelection(context, text);
-                      },
+                      onTap: () => _navigateAndDisplaySelection(context, text),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [

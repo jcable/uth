@@ -5,11 +5,9 @@ import 'about_page.dart';
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
-    required this.darkMode,
     required this.onDarkModeChanged,
   });
 
-  final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
 
   @override
@@ -17,7 +15,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  late bool _darkMode = widget.darkMode;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -26,9 +23,8 @@ class _SettingsPageState extends State<SettingsPage> {
       children: [
         SwitchListTile(
           title: const Text('Dark mode'),
-          value: _darkMode,
+          value: Theme.of(context).brightness == Brightness.dark,
           onChanged: (value) {
-            setState(() => _darkMode = value);
             widget.onDarkModeChanged(value);
           },
         ),
