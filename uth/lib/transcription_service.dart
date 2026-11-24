@@ -9,11 +9,17 @@ const _endpointUrl =
     'https://jcable--uth-transcribe-transcriber-web.us-east.modal.run/transcribe';
 
 Future<String> transcribeAudio(File file, {http.Client? client}) async {
-  final apiToken = await FirebaseAuth.instance.currentUser?.getIdToken(false);
-  final headers = {
-    'Authorization': 'Bearer $apiToken',
-    'Content-Type': 'audio/mp4',
-  };
+  final headers = {'Content-Type': 'audio/mp4'};
+
+  late String? apiToken;
+
+  if (!bool.fromEnvironment('CI')) {
+    apiToken = await FirebaseAuth.instance.currentUser?.getIdToken(false);
+    if (apiToken != null) {
+      headers['Authorization'] = 'Bearer $apiToken';
+    }
+  }
+
   try {
     final appToken = await FirebaseAppCheck.instance.getToken();
     if (appToken != null) {
