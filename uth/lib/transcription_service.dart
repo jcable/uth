@@ -5,7 +5,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
-const _endpointUrl =
+const endpointUrl =
     'https://jcable--uth-transcribe-transcriber-web.us-east.modal.run/transcribe';
 
 Future<String> transcribeAudio(File file, {http.Client? client}) async {
@@ -13,6 +13,7 @@ Future<String> transcribeAudio(File file, {http.Client? client}) async {
 
   const isCI = bool.fromEnvironment('CI');
   if (isCI) {
+      headers['Authorization'] = 'Bearer ****';
   } else {
     final apiToken = await FirebaseAuth.instance.currentUser?.getIdToken(false);
     if (apiToken != null) {
@@ -34,7 +35,7 @@ Future<String> transcribeAudio(File file, {http.Client? client}) async {
   try {
     final response = await requestClient
         .post(
-          Uri.parse(_endpointUrl),
+          Uri.parse(endpointUrl),
           headers: headers,
           body: await file.readAsBytes(),
         )
