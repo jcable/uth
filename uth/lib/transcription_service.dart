@@ -11,10 +11,10 @@ const _endpointUrl =
 Future<String> transcribeAudio(File file, {http.Client? client}) async {
   final headers = {'Content-Type': 'audio/mp4'};
 
-  late String? apiToken;
-
-  if (!bool.fromEnvironment('CI')) {
-    apiToken = await FirebaseAuth.instance.currentUser?.getIdToken(false);
+  const isCI = bool.fromEnvironment('CI');
+  if (isCI) {
+  } else {
+    final apiToken = await FirebaseAuth.instance.currentUser?.getIdToken(false);
     if (apiToken != null) {
       headers['Authorization'] = 'Bearer $apiToken';
     }
