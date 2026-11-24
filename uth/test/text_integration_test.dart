@@ -19,12 +19,14 @@ class MockFilePicker extends Mock
 
 void main() {
   late MockFilePicker picker;
+  final dummybytes = Uint8List(0);
 
   setUp(() {
     picker = MockFilePicker();
     FilePickerPlatform.instance = picker;
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
+    registerFallbackValue(dummybytes);
   });
 
   testWidgets('a named text can be created and opened', (tester) async {
