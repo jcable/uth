@@ -7,7 +7,11 @@ import 'package:http/testing.dart';
 import 'package:uth/auth/secrets.dart';
 import 'package:uth/transcription_service.dart';
 
-void main() {
+Future<void> main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
   test('sends audio and returns the transcribed text', () async {
     final directory = await Directory.systemTemp.createTemp('transcription-');
     addTearDown(() => directory.delete(recursive: true));
