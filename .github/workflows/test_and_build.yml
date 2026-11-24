@@ -20,8 +20,7 @@ jobs:
       - run: flutter pub get
         working-directory: uth
       - run: |
-          mkdir auth
-          echo 'const apiToken="";' > auth/secrets.dart
+          env
         working-directory: uth/lib
       - run: flutter test --coverage
         working-directory: uth
