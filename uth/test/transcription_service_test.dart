@@ -6,13 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:uth/auth/secrets.dart';
 import 'package:uth/transcription_service.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 Future<void> main() async {
-
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp();
 
   test('sends audio and returns the transcribed text', () async {
     final directory = await Directory.systemTemp.createTemp('transcription-');
