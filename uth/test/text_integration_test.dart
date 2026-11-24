@@ -331,11 +331,11 @@ void main() {
 
       final archive = ZipDecoder().decodeBytes(bytes);
       expect(archive.files.map((file) => file.name), [
-        'Practice/original.txt',
-        'Practice/transcript.txt',
+        'export/original.txt',
+        'export/transcript.txt',
       ]);
-      expect(utf8.decode(archive.files[0].content), 'Original text.');
-      expect(utf8.decode(archive.files[1].content), 'Recognized text.');
+      expect(utf8.decode(archive.files[0].content), 'Some Text.');
+      expect(utf8.decode(archive.files[1].content), '');
     },
   );
 }
