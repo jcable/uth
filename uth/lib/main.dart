@@ -1,16 +1,24 @@
-
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 import 'saved_texts_page.dart';
 import 'text_classes.dart';
 import 'text_store.dart';
 
-void main() => runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FirebaseAppCheck.instance.activate(
+    // providerAndroid: AndroidDebugProvider()
+  );
+  await FirebaseAuth.instance.signInAnonymously();
+  runApp(const MyApp());
+}
 
 class MyApp extends StatefulWidget {
-  const MyApp({
-    super.key,
-  });
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -51,18 +59,17 @@ class _MyAppState extends State<MyApp> {
     ),
     themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
     home: _loading
-          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-          : SavedTextsPage(
-              texts: _texts,
-              error: _error,
-              onDarkModeChanged: (value) => setState(() => _darkMode = value),
-              onErrorDismissed: () => _setState(() => _error = null),
-              onAddText: _addText,
-              onUpdateText: _updateText,
-              onTextDeleted: _deleteText,
-              onErrorChanged: (error) => _setState(() => _error = error),
-            ),
-
+        ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+        : SavedTextsPage(
+            texts: _texts,
+            error: _error,
+            onDarkModeChanged: (value) => setState(() => _darkMode = value),
+            onErrorDismissed: () => _setState(() => _error = null),
+            onAddText: _addText,
+            onUpdateText: _updateText,
+            onTextDeleted: _deleteText,
+            onErrorChanged: (error) => _setState(() => _error = error),
+          ),
   );
   // onBack, onAddTranscript,
 
@@ -89,11 +96,8 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _deleteText(SavedText deleted) async {
     _setState(() {
-      _texts = _texts
-          .where((text) => text.id != deleted.id)
-          .toList();
+      _texts = _texts.where((text) => text.id != deleted.id).toList();
     });
     await saveTexts(_texts);
   }
-
 }

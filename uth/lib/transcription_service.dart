@@ -1,21 +1,35 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
-import 'auth/secrets.dart';
-
 const _endpointUrl =
-    'https://jcable--whisper-transcribe-transcriber-transcribe.us-east.modal.run';
+    'https://jcable--uth-transcribe-transcriber-web.us-east.modal.run/transcribe';
 
 Future<String> transcribeAudio(File file, {http.Client? client}) async {
+  final apiToken = await FirebaseAuth.instance.currentUser?.getIdToken(false);
+  final headers = {
+    'Authorization': 'Bearer $apiToken',
+    'Content-Type': 'audio/mp4',
+  };
+  try {
+    final appToken = await FirebaseAppCheck.instance.getToken();
+    if (appToken != null) {
+      headers['X-Firebase-AppCheck'] = appToken;
+    }
+  } catch (_) {
+    // App Check is optional, so continue without an app token.
+  }
+
   final requestClient = client ?? http.Client();
 
   try {
     final response = await requestClient
         .post(
           Uri.parse(_endpointUrl),
-          headers: {'Authorization': 'Bearer $apiToken', 'Content-Type': 'audio/mp4'},
+          headers: headers,
           body: await file.readAsBytes(),
         )
         .timeout(const Duration(seconds: 180));
