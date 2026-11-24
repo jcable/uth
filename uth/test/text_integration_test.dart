@@ -288,7 +288,10 @@ void main() {
           bytes: any(named: 'bytes'),
           type: any(named: 'type'),
           allowedExtensions: any(named: 'allowedExtensions'),
-        )).thenAnswer((_) async => '/tmp/report.zip');
+        )).thenAnswer((invocation) async {
+  final name = invocation.namedArguments[#fileName] as String?;
+  return '/tmp/$name';
+});
 
     await tester.pumpWidget(MyApp());
     await tester.tap(find.text('Add text'));
@@ -313,19 +316,21 @@ void main() {
 
     await tester.tap(find.byTooltip('Save export'));
     await tester.pumpAndSettle();
-
-    verify(() => picker.saveFile(
-          dialogTitle: any(named: 'dialogTitle'),
-          fileName: 'export.zip',
-          bytes: any(named: 'bytes'),
-          type: any(named: 'type'),
-          allowedExtensions: any(named: 'allowedExtensions'),
-        )).called(1);
      
+final captured = verify(() => picker.saveFile(
+      dialogTitle: any(named: 'dialogTitle'),
+      fileName: captureAny(named: 'fileName'),
+      bytes: captureAny(named: 'bytes'),
+      type: any(named: 'type'),
+      allowedExtensions: any(named: 'allowedExtensions'),
+    )).captured;
+final fileName = captured[0] as String?;
+final bytes = captured[1] as Uint8List;
 
-      /* TODO
+expect(fileName, 'export.zip');
+
       final archive = ZipDecoder().decodeBytes(
-        createSavedTextArchive(savedText),
+        bytes,
       );
       expect(archive.files.map((file) => file.name), [
         'Practice/original.txt',
@@ -333,7 +338,6 @@ void main() {
       ]);
       expect(utf8.decode(archive.files[0].content), 'Original text.');
       expect(utf8.decode(archive.files[1].content), 'Recognized text.');
-*/
     },
   );
 
