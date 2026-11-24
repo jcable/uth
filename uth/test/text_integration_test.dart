@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:archive/archive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
 
 import 'package:mocktail/mocktail.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -11,15 +15,14 @@ import 'package:uth/main.dart';
 
 class MockFilePicker extends Mock
     with MockPlatformInterfaceMixin
-    implements FilePicker {}
+    implements FilePickerPlatform {}
 
 void main() {
-
   late MockFilePicker picker;
 
   setUp(() {
     picker = MockFilePicker();
-    FilePicker.platform = picker;
+    FilePickerPlatform.instance = picker;
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
   });
@@ -147,10 +150,7 @@ void main() {
     expect(find.text('Record'), findsOneWidget);
   });
 
-  testWidgets('editing saved text updates persistent storage', (
-    tester,
-  ) async {
-    
+  testWidgets('editing saved text updates persistent storage', (tester) async {
     await tester.pumpWidget(MyApp());
     await tester.tap(find.text('Add text'));
     await tester.pumpAndSettle();
@@ -194,17 +194,14 @@ void main() {
     expect(find.text('Before'), findsNothing);
 
     await tester.tap(find.text('After'));
-    
+
     await tester.pumpAndSettle();
-    
+
     expect(find.text('After'), findsOneWidget);
     expect(find.text('Read the new text.'), findsOneWidget);
   });
 
-  testWidgets('deleting saved text updates persistent storage', (
-    tester,
-  ) async {
-    
+  testWidgets('deleting saved text updates persistent storage', (tester) async {
     await tester.pumpWidget(MyApp());
     await tester.tap(find.text('Add text'));
     await tester.pumpAndSettle();
@@ -236,7 +233,6 @@ void main() {
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
     expect(find.text('Script'), findsNothing);
-
   });
 
   testWidgets('sentence splitting separates original text into paragraphs', (
@@ -281,57 +277,57 @@ void main() {
   testWidgets(
     'text list save action creates a ZIP of original and transcript',
     (tester) async {
-
-      when(() => picker.saveFile(
+      when(
+        () => picker.saveFile(
+          mimeType: any(named: 'mimeType'),
           dialogTitle: any(named: 'dialogTitle'),
           fileName: any(named: 'fileName'),
           bytes: any(named: 'bytes'),
-          type: any(named: 'type'),
-          allowedExtensions: any(named: 'allowedExtensions'),
-        )).thenAnswer((invocation) async {
-  final name = invocation.namedArguments[#fileName] as String?;
-  return '/tmp/$name';
-});
+        ),
+      ).thenAnswer((invocation) async {
+        final name = invocation.namedArguments[#fileName] as String?;
+        return Uri.file('/tmp/$name');
+      });
 
-    await tester.pumpWidget(MyApp());
-    await tester.tap(find.text('Add text'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is TextField && widget.decoration?.labelText == 'Name',
-      ),
-      'export',
-    );
-    await tester.enterText(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is TextField &&
-            widget.decoration?.labelText == 'Paste or enter text',
-      ),
-      'Some Text',
-    );
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip('Save export'));
-    await tester.pumpAndSettle();
-     
-final captured = verify(() => picker.saveFile(
-      dialogTitle: any(named: 'dialogTitle'),
-      fileName: captureAny(named: 'fileName'),
-      bytes: captureAny(named: 'bytes'),
-      type: any(named: 'type'),
-      allowedExtensions: any(named: 'allowedExtensions'),
-    )).captured;
-final fileName = captured[0] as String?;
-final bytes = captured[1] as Uint8List;
-
-expect(fileName, 'export.zip');
-
-      final archive = ZipDecoder().decodeBytes(
-        bytes,
+      await tester.pumpWidget(MyApp());
+      await tester.tap(find.text('Add text'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField && widget.decoration?.labelText == 'Name',
+        ),
+        'export',
       );
+      await tester.enterText(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration?.labelText == 'Paste or enter text',
+        ),
+        'Some Text',
+      );
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Save export'));
+      await tester.pumpAndSettle();
+
+      final captured = verify(
+        () => picker.saveFile(
+          mimeType: any(named: 'mimeType'),
+          dialogTitle: any(named: 'dialogTitle'),
+          fileName: captureAny(named: 'fileName'),
+          bytes: captureAny(named: 'bytes'),
+
+        ),
+      ).captured;
+      final fileName = captured[0] as String?;
+      final bytes = captured[1] as Uint8List;
+
+      expect(fileName, 'export.zip');
+
+      final archive = ZipDecoder().decodeBytes(bytes);
       expect(archive.files.map((file) => file.name), [
         'Practice/original.txt',
         'Practice/transcript.txt',
@@ -340,5 +336,4 @@ expect(fileName, 'export.zip');
       expect(utf8.decode(archive.files[1].content), 'Recognized text.');
     },
   );
-
 }

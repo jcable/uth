@@ -73,7 +73,7 @@ void main() {
   });
 
   testWidgets(
-    skip: true,
+    skip: false,
     'dark mode uses darker comparison highlight colors',
     (tester) async {
     const savedText = SavedText(

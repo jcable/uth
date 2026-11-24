@@ -33,7 +33,6 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
   String? _error;
   bool _recording = false;
   bool _playing = false;
-  bool _transcribing = false;
   final verticalPadding = 12.0;
   final buttonPadding = EdgeInsets.fromLTRB(12, 12, 12, 48);
 
@@ -224,7 +223,6 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
     if (path == null) return;
     final file = File(path);
     _setState(() {
-      _transcribing = true;
       _error = null;
     });
     try {
@@ -240,7 +238,6 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
       if (mounted) {
         _setState(() {
           _pendingAudioPath = null;
-          _transcribing = false;
         });
       }
     }
