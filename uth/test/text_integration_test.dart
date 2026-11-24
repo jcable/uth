@@ -307,7 +307,7 @@ void main() {
               widget is TextField &&
               widget.decoration?.labelText == 'Paste or enter text',
         ),
-        'Some Text',
+        'Some Text.',
       );
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
