@@ -18,15 +18,15 @@ Future<String> transcribeAudio(File file, {http.Client? client}) async {
     if (apiToken != null) {
       headers['Authorization'] = 'Bearer $apiToken';
     }
-  }
 
-  try {
-    final appToken = await FirebaseAppCheck.instance.getToken();
-    if (appToken != null) {
-      headers['X-Firebase-AppCheck'] = appToken;
+    try {
+      final appToken = await FirebaseAppCheck.instance.getToken();
+      if (appToken != null) {
+        headers['X-Firebase-AppCheck'] = appToken;
+      }
+    } catch (_) {
+      // App Check is optional, so continue without an app token.
     }
-  } catch (_) {
-    // App Check is optional, so continue without an app token.
   }
 
   final requestClient = client ?? http.Client();
