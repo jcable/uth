@@ -10,6 +10,8 @@ import 'package:firebase_core/firebase_core.dart';
 
 Future<void> main() async {
 
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp();
 
   test('sends audio and returns the transcribed text', () async {
