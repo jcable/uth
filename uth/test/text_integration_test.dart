@@ -2,14 +2,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_picker/file_picker.dart';
+
+import 'package:mocktail/mocktail.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:uth/main.dart';
 
+class MockFilePicker extends Mock
+    with MockPlatformInterfaceMixin
+    implements FilePicker {}
+
 void main() {
 
-  TestWidgetsFlutterBinding.ensureInitialized();
-  SharedPreferences.setMockInitialValues({});
-  
+  late MockFilePicker picker;
+
+  setUp(() {
+    picker = MockFilePicker();
+    FilePicker.platform = picker;
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('a named text can be created and opened', (tester) async {
     await tester.pumpWidget(MyApp());
     await tester.tap(find.text('Add text'));
@@ -225,51 +239,6 @@ void main() {
 
   });
 
-  testWidgets(
-    'text list save action creates a ZIP of original and transcript',
-    (tester) async {
-    await tester.pumpWidget(MyApp());
-    await tester.tap(find.text('Add text'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is TextField && widget.decoration?.labelText == 'Name',
-      ),
-      'export',
-    );
-    await tester.enterText(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is TextField &&
-            widget.decoration?.labelText == 'Paste or enter text',
-      ),
-      'Some Text',
-    );
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip('Save export'));
-    await tester.pumpAndSettle();
-    // expect(find.text('SAVE'), findsOneWidget);
-    // expect(find.text('export.zip'), findsOneWidget);
-    // await tester.tap(find.text('SAVE'));
-    // await tester.pumpAndSettle();
-
-      /* TODO
-      final archive = ZipDecoder().decodeBytes(
-        createSavedTextArchive(savedText),
-      );
-      expect(archive.files.map((file) => file.name), [
-        'Practice/original.txt',
-        'Practice/transcript.txt',
-      ]);
-      expect(utf8.decode(archive.files[0].content), 'Original text.');
-      expect(utf8.decode(archive.files[1].content), 'Recognized text.');
-*/
-    },
-  );
-
   testWidgets('sentence splitting separates original text into paragraphs', (
     tester,
   ) async {
@@ -308,5 +277,64 @@ void main() {
       'A chiad sentans.\n\nAn darna sentans.',
     );
   });
+
+  testWidgets(
+    'text list save action creates a ZIP of original and transcript',
+    (tester) async {
+
+      when(() => picker.saveFile(
+          dialogTitle: any(named: 'dialogTitle'),
+          fileName: any(named: 'fileName'),
+          bytes: any(named: 'bytes'),
+          type: any(named: 'type'),
+          allowedExtensions: any(named: 'allowedExtensions'),
+        )).thenAnswer((_) async => '/tmp/report.zip');
+
+    await tester.pumpWidget(MyApp());
+    await tester.tap(find.text('Add text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Name',
+      ),
+      'export',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Paste or enter text',
+      ),
+      'Some Text',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Save export'));
+    await tester.pumpAndSettle();
+
+    verify(() => picker.saveFile(
+          dialogTitle: any(named: 'dialogTitle'),
+          fileName: 'export.zip',
+          bytes: any(named: 'bytes'),
+          type: any(named: 'type'),
+          allowedExtensions: any(named: 'allowedExtensions'),
+        )).called(1);
+     
+
+      /* TODO
+      final archive = ZipDecoder().decodeBytes(
+        createSavedTextArchive(savedText),
+      );
+      expect(archive.files.map((file) => file.name), [
+        'Practice/original.txt',
+        'Practice/transcript.txt',
+      ]);
+      expect(utf8.decode(archive.files[0].content), 'Original text.');
+      expect(utf8.decode(archive.files[1].content), 'Recognized text.');
+*/
+    },
+  );
 
 }
