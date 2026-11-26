@@ -12,6 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: subosito/flutter-action@v2.23.0
-      - uses: bluefireteam/flutter-gh-pages@v11
+      - uses: bluefireteam/flutter-gh-pages@v9
         with:
             workingDir: uth

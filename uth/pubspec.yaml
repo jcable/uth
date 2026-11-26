@@ -69,6 +69,15 @@ legal:
       sky_engine:
         expression: "BSD-3-Clause"
         reason: "Reviewed as safe."
+      firebase_auth_platform_interface:
+        expression: "BSD-3-Clause"
+        reason: "Reviewed as safe."
+      firebase_core:
+        expression: "BSD-3-Clause"
+        reason: "Reviewed as safe."
+      firebase_app_check:
+        expression: "BSD-3-Clause"
+        reason: "Reviewed as safe."
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
