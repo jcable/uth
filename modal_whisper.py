@@ -20,6 +20,7 @@ import os
 import json
 import time
 import modal
+import asyncio
 
 # ---- CHANGE THIS to your CTranslate2 model's Hugging Face repo id ----
 MODEL_ID = "eist-edinburgh/whisper-large-v3-turbo-gaelic-ct2-v2"
@@ -88,14 +89,43 @@ def _init_firebase():
         info = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT_JSON"])
         firebase_admin.initialize_app(credentials.Certificate(info))
 
-def _check_rate_limit(uid: str):
+async def _check_rate_limit(uid: str):
     window = int(time.time() // RATE_WINDOW)
     key = f"{uid}:{window}"
-    count = rate_limits.get.aio(key, 0) + 1  # not atomic; fine for a sketch
-    rate_limits.put.aio(key, count)
+    count = await rate_limits.get.aio(key, 0) + 1  # not atomic; fine for a sketch
+    await rate_limits.put.aio(key, count)
     if count > RATE_LIMIT:
         raise HTTPException(status_code=429, detail="Too many requests")
 
+async def _authorise(request):
+    from firebase_admin import app_check, auth
+
+    _init_firebase()
+
+    authorization = request.headers.get("authorization", "")
+    x_firebase_appcheck = request.headers.get("X-Firebase-AppCheck", "")
+
+    # 1. Verify the user's Firebase ID token
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+    try:
+        decoded = auth.verify_id_token(authorization.removeprefix("Bearer "))
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    uid = decoded["uid"]
+
+    if os.environ.get('DISABLE_APPCHECK', '0') != '1':
+        # 2. Verify App Check (proves the request came from your genuine app)
+        if not x_firebase_appcheck:
+            raise HTTPException(status_code=401, detail="Missing App Check token")
+        try:
+            app_check.verify_token(x_firebase_appcheck)
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid App Check token")
+
+    # 3. Rate limit per user
+    await _check_rate_limit(uid)
+              
 @app.cls(
     image=image,
     gpu="T4",  # 16 GB is plenty for the turbo model in fp16; try "L4" for more speed
@@ -128,35 +158,19 @@ class Transcriber:
             allow_headers=["Authorization", "Content-Type"],
         )
 
+        @api.get("/capacity")
+        async def capacity(request: Request):
+
+            _authorise(request)
+
+            s = await modal.Workspace.from_context().billing.summary()
+
+            return({'metered_cost': float(s['metered_cost']), 'billed_cost':  float(s['billed_cost']), 'allowance': float(os.environ.get('ALLOWANCE', 30.0)) });
+
         @api.post("/transcribe")
         async def transcribe(request: Request):
-            from firebase_admin import app_check, auth
 
-            _init_firebase()
-
-            authorization = request.headers.get("authorization", "")
-            x_firebase_appcheck = request.headers.get("X-Firebase-AppCheck", "")
-
-            # 1. Verify the user's Firebase ID token
-            if not authorization or not authorization.startswith("Bearer "):
-                raise HTTPException(status_code=401, detail="Missing bearer token")
-            try:
-                decoded = auth.verify_id_token(authorization.removeprefix("Bearer "))
-            except Exception:
-                raise HTTPException(status_code=401, detail="Invalid token")
-            uid = decoded["uid"]
-
-            if os.environ.get('DISABLE_APPCHECK', '0') != '1':
-                # 2. Verify App Check (proves the request came from your genuine app)
-                if not x_firebase_appcheck:
-                    raise HTTPException(status_code=401, detail="Missing App Check token")
-                try:
-                    app_check.verify_token(x_firebase_appcheck)
-                except Exception:
-                    raise HTTPException(status_code=401, detail="Invalid App Check token")
-
-            # 3. Rate limit per user
-            _check_rate_limit(uid)
+            _authorise(request)
 
             audio_bytes = await request.body()
             if not audio_bytes:
