@@ -161,16 +161,16 @@ class Transcriber:
         @api.get("/capacity")
         async def capacity(request: Request):
 
-            _authorise(request)
+            await _authorise(request)
 
-            s = await modal.Workspace.from_context().billing.summary()
+            s = await modal.Workspace.from_context().billing.summary.aio()
 
             return({'metered_cost': float(s['metered_cost']), 'billed_cost':  float(s['billed_cost']), 'allowance': float(os.environ.get('ALLOWANCE', 30.0)) });
 
         @api.post("/transcribe")
         async def transcribe(request: Request):
 
-            _authorise(request)
+            await _authorise(request)
 
             audio_bytes = await request.body()
             if not audio_bytes:
