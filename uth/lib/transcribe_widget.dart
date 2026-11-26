@@ -244,7 +244,6 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
   Future<void> _transcribeRecording() async {
     final path = _pendingAudioPath;
     if (path == null) return;
-    final file = File(path);
     _setState(() {
       _error = null;
     });
@@ -271,7 +270,6 @@ class _TranscribeWidgetState extends State<TranscribeWidget> {
     } catch (error) {
       if (mounted) _setState(() => _error = 'Transcription failed: $error');
     } finally {
-      if (await file.exists()) await file.delete();
       if (mounted) {
         _setState(() {
           _pendingAudioPath = null;

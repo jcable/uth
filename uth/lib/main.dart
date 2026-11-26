@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
+// import 'package:firebase_app_check/firebase_app_check.dart';
 
 import 'saved_texts_page.dart';
 import 'text_classes.dart';
 import 'text_store.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await FirebaseAppCheck.instance.activate(
-    // providerAndroid: AndroidDebugProvider()
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+  // await FirebaseAppCheck.instance.activate(
+  //   // providerAndroid: AndroidDebugProvider()
+  // );
   await FirebaseAuth.instance.signInAnonymously();
   runApp(const MyApp());
 }
