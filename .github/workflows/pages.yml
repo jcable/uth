@@ -1,7 +1,7 @@
 name: Gh-Pages
 permissions:
   pages: write
-  contents: write
+  id-token: write
 on:
   push:
     branches: [ main ]
