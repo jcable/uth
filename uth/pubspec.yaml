@@ -93,6 +93,9 @@ legal:
       firebase_core_web:
         expression: "BSD-3-Clause"
         reason: "Reviewed as safe."
+      firebase_app_check_web:
+        expression: "BSD-3-Clause"
+        reason: "Reviewed as safe."
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
